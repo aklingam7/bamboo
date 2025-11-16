@@ -1,11 +1,15 @@
+type lexeme
 type dictionary
 
-val build_dictionary : string list list -> dictionary
-(** [build_dictionary raw_data] takes in an already read dictionary CSV and
-    constructs a dictionary. [raw_data] is a string list of lists associating a
-    lexical category (noun, determiner, verb, etc.) with a word in the given
-    language *)
+val create_lexeme : string -> string -> lexeme
+(** [create_lexeme lexical_category word] creates a new lexeme from the provided
+    inputs for futher use in other functions *)
 
-val mem : string -> dictionary -> bool
-(** [mem word dictionary] checks if the given word is in the provided dictionary
-*)
+val build_dictionary : string list list -> dictionary
+(** [build_dictionary data] takes in a table and constructs a dictionary. [data]
+    is a nx2 string list of lists associating a lexical category (noun,
+    determiner, verb, etc.) with a word in the given language *)
+
+val mem : lexeme -> dictionary -> bool
+(** [mem lexeme dictionary] checks if the given lexeme is in the provided
+    dictionary *)

@@ -1,6 +1,24 @@
-type lexical_category = string
-type lexeme = lexical_category * string
+type lexeme = string * string
 type dictionary = lexeme list
 
-let build_dictionary read_file = failwith "TODO"
-let mem word dictionary = failwith "TODO"
+let create_lexeme lexical_category word : lexeme = (lexical_category, word)
+
+let build_dictionary data : dictionary =
+  let rec builder d =
+    match data with
+    | [] -> []
+    | [ cat; word ] :: tl -> create_lexeme cat word :: builder tl
+    | _ ->
+        failwith
+          "The dictionary received is of an invalid type. The CSV must be of \
+           size nx2"
+  in
+  builder data
+
+let mem lex (dict : dictionary) : bool =
+  let rec checker (lex : lexeme) dict =
+    match dict with
+    | [] -> false
+    | lx :: dict_tl -> if lex = lx then true else checker lex dict_tl
+  in
+  checker lex dict
