@@ -1,2 +1,4 @@
 (test
- (name test_bamboo))
+ (name test_bamboo)
+ (modules test_bamboo test_rules test_tree test_word)
+ (libraries ounit2 bamboo))
