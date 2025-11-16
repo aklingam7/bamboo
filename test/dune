@@ -1,4 +1,5 @@
 (test
  (name test_bamboo)
- (modules test_bamboo test_rules test_tree test_word)
+ (modules test_bamboo test_syntax test_tree test_word)
+ (deps (glob_files_rec ../data/*))
  (libraries ounit2 bamboo))
