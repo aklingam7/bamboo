@@ -1,0 +1,7 @@
+# Build Files
+_build/
+_opam/
+_coverage/
+
+# Misc OS Files
+.DS_Store
