@@ -7,7 +7,6 @@
 (* Prints the tree *)
 (* Validates the tree *)
 open Syntax
-open Dictionary
 
 type tree
 
