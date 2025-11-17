@@ -24,7 +24,7 @@ val build_syntax : syntax_doc -> syntax
 (** [build_syntax sd] evaluates to a value of type syntax representing the
     syntax defined by the text of [sd].
 
-    Raises: [SynaxParsingFailure] if the document is malformed. The syntax for
+    Raises: [SyntaxParsingFailure] if the document is malformed. The syntax for
     the syntax is shown below (with \n representing the literal newline
     character and not an escape sequence).
 
@@ -44,8 +44,5 @@ val check_lexeme : syntax -> lexical_node -> bool
 val check_constituent : syntax -> constituent_node -> bool
 (** [check_constituent s c] returns true if and only if the constituent [c] has
     a valid constituent category (that is defined in [s]) and its children are
-    valid as per the ruleset of syntax [s].
-
-    Representation invariant: any constituent or lexical nodes that are used to
-    construct [c] should themselves be valid (i.e., their respective check
-    function returns true). *)
+    both valid as per the rules in ruleset for the constituent category of [c]
+    and valid constiuents or lexemes themselves. *)
