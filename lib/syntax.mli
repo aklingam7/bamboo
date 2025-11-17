@@ -22,7 +22,8 @@ and constituent_node = {
 
 val build_syntax : syntax_doc -> syntax
 (** [build_syntax sd] evaluates to a value of type syntax representing the
-    syntax defined by the text of [sd].
+    syntax defined by the text of [sd]. See install.md for examples of valid
+    values for [sd].
 
     Raises: [SyntaxParsingFailure] if the document is malformed. The syntax for
     the syntax is shown below (with \n representing the literal newline
