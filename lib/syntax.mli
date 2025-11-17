@@ -26,16 +26,19 @@ val build_syntax : syntax_doc -> syntax
 
     Raises: [SyntaxParsingFailure] if the document is malformed. The syntax for
     the syntax is shown below (with \n representing the literal newline
-    character and not an escape sequence).
+    character and not the escape sequence).
 
     Syntax file syntax:
-    syntax = 'lexical categories:\n', constituent list, 'constituent
-     categories:\n', constituent list, 'rules:\n', ruleset, '\n' 
-    constituent list = { constituent, '\n' } 
-    ruleset = { rule, '\n' } 
-    constituent = { regular character } 
-    rule = { regular character }, ' -> ', { regular character } 
-    regular character = ? all non newline or EOF character ?] *)
+    {@EBNF[
+      syntax = 'lexical categories:\n', constituent list,
+       'constituent categories:\n', constituent list, 'rules:\n', ruleset, '\n'
+      constituent list = { constituent, '\n' }
+      ruleset = { rule, '\n' }
+      constituent = { regular character }
+      rule = constituent , ' -> ', replacement
+      replacement = constituent, [' ', constituent]
+      regular character = ? all non word boundary characters ?
+    ]} *)
 
 val check_lexeme : syntax -> lexical_node -> bool
 (** [check_lexeme s l] returns true if and only if the lexeme l is of a valid
