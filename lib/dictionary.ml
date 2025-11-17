@@ -6,6 +6,9 @@ let create_lexeme lexical_category word : lexeme = (lexical_category, word)
 let string_of_lexeme ((cat, word) : lexeme) =
   "Category: " ^ cat ^ " | Word: " ^ word
 
+let get_lexeme_category (cat, _) = cat
+let get_lexeme_word (_, word) = word
+
 let build_dictionary data : dictionary =
   let rec builder d =
     match d with
