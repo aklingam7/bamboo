@@ -8,7 +8,7 @@ let string_of_lexeme ((cat, word) : lexeme) =
 
 let build_dictionary data : dictionary =
   let rec builder d =
-    match data with
+    match d with
     | [] -> []
     | [ cat; word ] :: tl -> create_lexeme cat word :: builder tl
     | _ ->
