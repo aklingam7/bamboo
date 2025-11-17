@@ -1,3 +1,6 @@
+exception SyntaxParsingFailure
+
+type syntax_doc = string
 type syntax
 
 type lexical_node = {
@@ -16,6 +19,23 @@ and constituent_node = {
   category : string;
   children : constituent_children;
 }
+
+val build_syntax : syntax_doc -> syntax
+(** [build_syntax sd] evaluates to a value of type syntax representing the
+    syntax defined by the text of [sd].
+
+    Raises: [SynaxParsingFailure] if the document is malformed. The syntax for
+    the syntax is shown below (with \n representing the literal newline
+    character and not an escape sequence).
+
+    Syntax file syntax:
+    syntax = 'lexical categories:\n', constituent list, 'constituent
+     categories:\n', constituent list, 'rules:\n', ruleset, '\n' 
+    constituent list = { constituent, '\n' } 
+    ruleset = { rule, '\n' } 
+    constituent = { regular character } 
+    rule = { regular character }, ' -> ', { regular character } 
+    regular character = ? all non newline or EOF character ?] *)
 
 val check_lexeme : syntax -> lexical_node -> bool
 (** [check_lexeme s l] returns true if and only if the lexeme l is of a valid

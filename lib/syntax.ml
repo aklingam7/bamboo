@@ -1,3 +1,7 @@
+exception SyntaxParsingFailure
+
+type syntax_doc = string
+
 type syntax = unit (* placeholder *)
 (** This implementation is currently unimplimented. *)
 
@@ -17,6 +21,8 @@ and constituent_node = {
   category : string;
   children : constituent_children;
 }
+
+let build_syntax (sd : syntax_doc) = failwith "unimplimented"
 
 let check_lexeme (s : syntax) (l : lexical_node) : bool =
   failwith "unimplimented"
