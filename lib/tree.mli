@@ -21,6 +21,8 @@ val add : string -> string -> syntax -> unit
    is a string of that syntactic category. Raises [] if category and word do not
    match.*)
 
+val get : int -> tree list -> tree
+(**[get id] returns the node associated with the given id in the tree list.*)
 val remove : int -> tree list -> unit
 (**[remove cat word] removes a word and its syntactic category from the <type>*)
 val connect2 : tree -> tree -> string -> syntax ->unit
