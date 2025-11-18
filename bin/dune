@@ -1,4 +1,5 @@
 (executable
  (public_name bamboo)
  (name main)
- (libraries bamboo))
+ (libraries bamboo csv batteries)
+ (modules main))

@@ -103,9 +103,14 @@ let remove removal_id (lst : tree list) =
       | NodeTwo { t1; t2; id } -> id :: id :: (claimed_ids t1 @ claimed_ids t2)
       | Leaf { id } -> [ id ]
     in
-    let () = print_endline "Hey" in
+    let start_claim tree =
+      match tree with
+      | NodeOne { t } -> claimed_ids t
+      | NodeTwo { t1; t2 } -> claimed_ids t1 @ claimed_ids t2
+      | Leaf _ -> []
+    in
     match lst with
-    | [] -> []
+    | [] -> raise Wrong
     | h :: t ->
         let id =
           match h with
@@ -120,7 +125,7 @@ let remove removal_id (lst : tree list) =
             | NodeTwo { t1; t2 } -> [ t1; t2 ]
             | Leaf _ -> []
           in
-          let disallowed_ids = claimed_ids h in
+          let disallowed_ids = List.flatten (List.map start_claim children) in
           List.filter
             (fun node ->
               let id =
@@ -135,6 +140,21 @@ let remove removal_id (lst : tree list) =
   in
   treelist := internal [] lst
 
+let fade fade_id (lst : tree list) =
+  let rec internal prev lst =
+    match lst with
+    | [] -> []
+    | h :: t ->
+        let id =
+          match h with
+          | NodeOne { id } -> id
+          | NodeTwo { id } -> id
+          | Leaf { id } -> id
+        in
+        if id = fade_id then List.rev prev @ t else internal (h :: prev) t
+  in
+  treelist := internal [] lst
+
 let connect2 t1 t2 category syntax =
   let new_id = newID () in
   if
@@ -143,15 +163,15 @@ let connect2 t1 t2 category syntax =
   then
     let () =
       match t1 with
-      | NodeOne { id } -> remove id !treelist
-      | NodeTwo { id } -> remove id !treelist
-      | Leaf { id } -> remove id !treelist
+      | NodeOne { id } -> fade id !treelist
+      | NodeTwo { id } -> fade id !treelist
+      | Leaf { id } -> fade id !treelist
     in
     let () =
       match t2 with
-      | NodeOne { id } -> remove id !treelist
-      | NodeTwo { id } -> remove id !treelist
-      | Leaf { id } -> remove id !treelist
+      | NodeOne { id } -> fade id !treelist
+      | NodeTwo { id } -> fade id !treelist
+      | Leaf { id } -> fade id !treelist
     in
     treelist := NodeTwo { t1; t2; category; id = new_id } :: !treelist
   else raise Wrong
@@ -164,9 +184,9 @@ let connect1 tree const syn =
   then
     let () =
       match tree with
-      | NodeOne { id } -> remove id !treelist
-      | NodeTwo { id } -> remove id !treelist
-      | Leaf { id } -> remove id !treelist
+      | NodeOne { id } -> fade id !treelist
+      | NodeTwo { id } -> fade id !treelist
+      | Leaf { id } -> fade id !treelist
     in
     treelist := NodeOne { t = tree; category = const; id } :: !treelist
   else raise Wrong

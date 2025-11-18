@@ -1,0 +1,14 @@
+lexical categories:
+N
+V
+D
+constituent categories:
+DP
+VP
+TP
+NP
+rules:
+TP -> NP VP
+NP -> N
+DP -> D NP
+VP -> V DP
