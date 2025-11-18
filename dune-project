@@ -17,5 +17,5 @@
  (name bamboo)
  (synopsis "A tree generator")
  (description "-")
- (depends ocaml)
+ (depends ocaml ppx_string)
  (tags ("syntax")))

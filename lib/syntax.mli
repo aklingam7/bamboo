@@ -1,6 +1,6 @@
-exception SyntaxParsingFailure
+exception InvalidSyntax
+exception MalformedSyntax
 
-type syntax_doc = string
 type syntax
 
 type lexical_node = {
@@ -20,14 +20,20 @@ and constituent_node = {
   children : constituent_children;
 }
 
-val build_syntax : syntax_doc -> syntax
+val build_syntax : string -> syntax
 (** [build_syntax sd] evaluates to a value of type syntax representing the
-    syntax defined by the text of [sd]. See install.md for examples of valid
-    values for [sd].
+    syntax defined by the syntax description [sd]. See install.md for examples
+    of valid values for [sd].
 
-    Raises: [SyntaxParsingFailure] if the document is malformed. The syntax for
-    the syntax is shown below (with \n representing the literal newline
-    character and not the escape sequence).
+    Raises: [InvalidSyntax] if there are duplicates in the lexical or
+    constituent categories. Note: extraneous categories, missing categories and
+    duplicate rules in ruleset are accepted on purpose. Observe that they should
+    always neither affect the behaviour of [check_lexeme] nor
+    [check_constituent].
+
+    Raises: [MalformedSyntax] if the document is malformed. The syntax for the
+    syntax is shown below (with \n representing the literal newline character
+    and not the escape sequence).
 
     Syntax file syntax:
     {@EBNF[
@@ -35,10 +41,10 @@ val build_syntax : syntax_doc -> syntax
        'constituent categories:\n', constituent list, 'rules:\n', ruleset, '\n'
       constituent list = { constituent, '\n' }
       ruleset = { rule, '\n' }
-      constituent = { regular character }
+      constituent = regular character, { regular character }
       rule = constituent , ' -> ', replacement
       replacement = constituent, [' ', constituent]
-      regular character = ? all non word boundary characters ?
+      regular character = ? all characters except U+0020 (space) ?
     ]} *)
 
 val check_lexeme : syntax -> lexical_node -> bool

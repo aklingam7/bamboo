@@ -1,3 +1,5 @@
 (library
  (name bamboo)
- (libraries str))
+ (libraries str)
+ (preprocess
+  (pps ppx_string)))

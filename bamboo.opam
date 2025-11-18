@@ -12,6 +12,7 @@ tags: ["syntax"]
 depends: [
   "dune" {>= "3.20"}
   "ocaml"
+  "ppx_string"
   "odoc" {with-doc}
 ]
 build: [

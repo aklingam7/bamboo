@@ -15,7 +15,7 @@ exception Wrong
 
 val treelist : tree list ref
 
-val add : syntax_doc -> syntax_doc -> syntax -> unit
+val add : string -> string -> syntax -> unit
 (**[add cat word] connects a word and its syntactic category to its <type>.
    Requires [cat] is a string represeting a valid syntactic category and [word]
    is a string of that syntactic category. Raises [] if category and word do not
@@ -23,9 +23,9 @@ val add : syntax_doc -> syntax_doc -> syntax -> unit
 
 val remove : int -> tree list -> unit
 (**[remove cat word] removes a word and its syntactic category from the <type>*)
-val connect2 : tree -> tree -> syntax_doc -> syntax ->unit
+val connect2 : tree -> tree -> string -> syntax ->unit
 (**[connect t1 t2] connects two nodes together to form a larger node.*)
-val connect1 : tree -> syntax_doc -> syntax->unit
+val connect1 : tree -> string -> syntax->unit
 (**[connect t1] connects one node to a constituent together to form a larger node.*)
 val to_string : tree -> string
 (**[print t] prints tree [t1] to output. Requires [t1] is a tree.*)

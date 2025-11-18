@@ -1,6 +1,5 @@
-exception SyntaxParsingFailure
-
-type syntax_doc = string
+exception InvalidSyntax
+exception MalformedSyntax
 
 type syntax = {
   lexical_categories : string list;
@@ -25,50 +24,79 @@ and constituent_node = {
   children : constituent_children;
 }
 
-let rule_regexp_pattern = {|([^\b]*)\b->\b(([^\b]*)\|([^\b]*\b[^\b]*))|}
+(** Raises [InvalidSyntax] if invalid. *)
+let validate_syntax (s : syntax) : unit =
+  let duplicates lst =
+    List.length (List.sort_uniq compare lst) <> List.length lst
+  in
+  if duplicates s.lexical_categories || duplicates s.constituent_categories then
+    raise InvalidSyntax
+
+let rule_regexp_pattern = {|\([^ ]+\) -> \([^ ]+\( [^ ]+\)?\)|}
 let rule_regexp = Str.regexp rule_regexp_pattern
 let lhs_group_number, rhs_group_number = (1, 2)
 
+let replace_newline_escape str =
+  let newline_escape_regexp = Str.regexp {|<n>|} in
+  Str.global_replace newline_escape_regexp "\n" str
+
 let syntax_doc_regexp =
-  let pattern =
-    let category_regexp = Str.regexp "<cats>" in
-    let rules_regexp = Str.regexp "<rules>" in
-    Str.global_replace category_regexp
-      ("\n" ^ {|(([^\b]*|} ^ "\n" ^ {|)*)|} ^ "\n")
-      (Str.global_replace rules_regexp
-         ("((" ^ rule_regexp_pattern ^ "\n)*)")
-         {|lexical categories: <cats>constituent categories: <cats>rules: <rules>|})
+  let header1 = "lexical categories:" in
+  let header2 = "constituent categories:" in
+  let header3 = "rules:" in
+  let cats = replace_newline_escape {|\(\([^ ]+<n>\)*\)|} in
+  let rules =
+    replace_newline_escape ({|\(\(|} ^ rule_regexp_pattern ^ {|<n>\)*\)|})
   in
-  Str.regexp pattern
+  Str.regexp
+    [%string "%{header1}\n%{cats}%{header2}\n%{cats}%{header3}\n%{rules}"]
 
 let lexical_cats_group_number, constituent_cats_group_number = (1, 3)
 let rules_group_number = 5
-let whitespace = " "
 
-let normalise_whitespace str =
-  let whitespace_regexp = Str.regexp {|\b|} in
-  Str.global_replace whitespace_regexp whitespace str
-
-let entries categories_string = String.split_on_char '\n' categories_string
-
-let build_syntax (sd : syntax_doc) : syntax =
-  let parse_rule rule =
-    let well_formed_rule = Str.string_match rule_regexp rule 0 in
-    if not well_formed_rule then raise SyntaxParsingFailure;
-    ( Str.matched_group lhs_group_number rule,
-      normalise_whitespace (Str.matched_group rhs_group_number rule) )
+(** Converts newline-terminated entries to [string list] *)
+let entries str =
+  let rec remove_last = function
+    | [] -> []
+    | [ _ ] -> []
+    | h :: t -> h :: remove_last t
   in
-  let well_formed = Str.string_match syntax_doc_regexp sd 0 in
-  if not well_formed then raise SyntaxParsingFailure;
-  {
-    lexical_categories =
-      entries (Str.matched_group lexical_cats_group_number sd);
-    constituent_categories =
-      entries (Str.matched_group constituent_cats_group_number sd);
-    ruleset =
-      (let rules = entries (Str.matched_group rules_group_number sd) in
-       List.map parse_rule rules);
-  }
+  remove_last (String.split_on_char '\n' str)
+
+(** Returns [true] on exact (complete) match and updates [Str.matched_string s]
+    if true *)
+let full_match r s =
+  Str.string_match r s 0
+  && String.length (Str.matched_string s) = String.length s
+
+let build_syntax (sd : string) : syntax =
+  (* Helper to parse rules *)
+  let parse_rule rule =
+    let well_formed_rule = full_match rule_regexp rule in
+    if not well_formed_rule then raise MalformedSyntax;
+    ( Str.matched_group lhs_group_number rule,
+      Str.matched_group rhs_group_number rule )
+  in
+
+  (* Parse sections *)
+  let well_formed = full_match syntax_doc_regexp sd in
+  if not well_formed then raise MalformedSyntax;
+
+  (* Construct syntax *)
+  let lexical_categories =
+    entries (Str.matched_group lexical_cats_group_number sd)
+  in
+  let constituent_categories =
+    entries (Str.matched_group constituent_cats_group_number sd)
+  in
+  let ruleset =
+    let rules = entries (Str.matched_group rules_group_number sd) in
+    List.map parse_rule rules
+  in
+  let syntax = { lexical_categories; constituent_categories; ruleset } in
+
+  validate_syntax syntax;
+  syntax
 
 let check_lexeme (s : syntax) (l : lexical_node) : bool =
   List.mem l.category s.lexical_categories
@@ -79,15 +107,17 @@ let rec check_constituent (s : syntax) (c : constituent_node) : bool =
     let rules = List.filter (fun rule -> fst rule = cat) s.ruleset in
     List.map snd rules
   in
+  List.mem c.category s.constituent_categories
+  &&
   match c.children with
   | L l -> List.mem l.category subs && check_lexeme s l
   | C c -> List.mem c.category subs && check_constituent s c
   | LC (l, c) ->
-      List.mem (l.category ^ whitespace ^ c.category) subs
+      List.mem (l.category ^ " " ^ c.category) subs
       && check_lexeme s l && check_constituent s c
   | CL (c, l) ->
-      List.mem (c.category ^ whitespace ^ l.category) subs
+      List.mem (c.category ^ " " ^ l.category) subs
       && check_constituent s c && check_lexeme s l
   | CC (c1, c2) ->
-      List.mem (c1.category ^ whitespace ^ c2.category) subs
+      List.mem (c1.category ^ " " ^ c2.category) subs
       && check_constituent s c1 && check_constituent s c2
