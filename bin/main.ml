@@ -9,18 +9,28 @@ let print_commands () =
   let () = print_endline "\tquit -> Exits the program" in
   let () =
     print_endline
+      "\tsyntax -> Displays the full syntax, including lexical categories, \
+       constituent categories, and constituent formation rules"
+  in
+  let () =
+    print_endline
       "\tadd <lexical-category> <word> -> Adds a node containing the described \
        lexeme to the syntax tree"
   in
   let () =
     print_endline
+      "\tconnect <constituent-category> <node> -> Adds a constituent node \
+       parenting the given node to the syntax tree"
+  in
+  let () =
+    print_endline
       "\tconnect <constituent-category> <node1> <node2> -> Adds a constituent \
-       node connecting the two given nodes to the syntax tree"
+       node parenting the two given nodes in order to the syntax tree"
   in
   let () =
     print_endline
       "\tremove <node> -> Removes the given node and all its connections from \
-       the tree"
+       the tree; can only remove top-level nodes (i.e., nodes with no parents)"
   in
   ()
 
@@ -60,7 +70,6 @@ let dictionary =
 
 let syntax =
   if !syntax_file <> "" then
-    let () = print_endline (BatFile.with_file_in !syntax_file BatIO.read_all) in
     try Syntax.build_syntax (BatFile.with_file_in !syntax_file BatIO.read_all)
     with _ ->
       let () = print_endline "Error in loading syntax" in
@@ -83,10 +92,15 @@ let main_loop =
             exit := true
           in
           ()
+      | "syntax" ->
+          if !syntax_file <> "" then
+            next_command_prompt
+              (BatFile.with_file_in !syntax_file BatIO.read_all)
+          else next_command_prompt ""
       | "add" ->
           let lexical_category = List.nth command 1 in
           let word = List.nth command 2 in
-          let () = Tree.add lexical_category word syntax in
+          let () = Tree.add lexical_category word syntax dictionary in
           next_command_prompt "Added node"
       | "connect" ->
           let constituent_category = List.nth command 1 in

@@ -3129,68 +3129,69 @@ D,which
 D,whichever
 D,you 
 D,zero 
-DP,I
-DP,we
-DP,you
-DP,thou
-DP,ye
-DP,he
-DP,she
-DP,it
-DP,they
-DP,one
-DP,who
-DP,what
-DP,which
-DP,each other
-DP,there
-DP,me
-DP,us
-DP,thee
-DP,y'all
-DP,him
-DP,her
-DP,them
-DP,whom
-DP,one another
-DP,myself
-DP,ourselves
-DP,yourself
-DP,thyself
-DP,yourselves
-DP,youse
-DP,himself
-DP,herself
-DP,itself
-DP,themselves
-DP,oneself
-DP,that
-DP,each other's
-DP,mine
-DP,ourself
-DP,yours
-DP,thine
-DP,his
-DP,hers
-DP,its
-DP,themself
-DP,theirs
-DP,one's
-DP,your
-DP,whose
-DP,whoself
-DP,one another's
-DP,my
-DP,ours
-DP,thy
-DP,their
-DP,of what
-DP,whoseself
-DP,our
-DP,thine 
-DP,of which
-DP,yeerselves
-DP,y'all's selves
-DP,y'all's
-DP,yeers
-DP,yeer
+D,0
+N,I
+N,we
+N,you
+N,thou
+N,ye
+N,he
+N,she
+N,it
+N,they
+N,one
+N,who
+N,what
+N,which
+N,each other
+N,there
+N,me
+N,us
+N,thee
+N,y'all
+N,him
+N,her
+N,them
+N,whom
+N,one another
+N,myself
+N,ourselves
+N,yourself
+N,thyself
+N,yourselves
+N,youse
+N,himself
+N,herself
+N,itself
+N,themselves
+N,oneself
+N,that
+N,each other's
+N,mine
+N,ourself
+N,yours
+N,thine
+N,his
+N,hers
+N,its
+N,themself
+N,theirs
+N,one's
+N,your
+N,whose
+N,whoself
+N,one another's
+N,my
+N,ours
+N,thy
+N,their
+N,of what
+N,whoseself
+N,our
+N,thine
+N,of which
+N,yeerselves
+N,y'all's selves
+N,y'all's
+N,yeers
+N,yeer

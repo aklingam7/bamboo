@@ -8,7 +8,7 @@ VP
 TP
 NP
 rules:
-TP -> NP VP
+TP -> DP VP
 NP -> N
 DP -> D NP
 VP -> V DP

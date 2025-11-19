@@ -80,11 +80,14 @@ let rec make_constituent_node tree =
           }
       | _ -> { category; children = CC (c1, c2) })
 
-let add cat word syn =
-  if check_lexeme syn { category = cat; child = word } then
+let add cat word syn dict =
+  if
+    check_lexeme syn { category = cat; child = word }
+    && mem (create_lexeme cat word) dict
+  then
     let node = Leaf { pair = create_lexeme cat word; id = newID () } in
-    treelist := node :: !treelist
-  else ()
+    treelist := !treelist @ [ node ]
+  else raise Wrong
 
 let rec get node_id (lst : tree list) =
   match lst with
