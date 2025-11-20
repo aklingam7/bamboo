@@ -14,4 +14,8 @@ Collaborators:
 - N/A
 
 GenAI Usage:
-- None
+- We utilized GenAI to help with somewhat obscure features of OCaml syntax 
+  and understanding mutually recursive data structures such as in the Syntax
+  module. We also utilized it to help determine what List methods would be 
+  useful in implementing the complicated remove function in the Tree module. 
+  We did not have it write code for us. 

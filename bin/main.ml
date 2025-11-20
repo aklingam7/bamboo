@@ -55,6 +55,7 @@ let speclist =
   ]
 
 let () = Arg.parse speclist anon_fun usage_msg
+let starting_info = ref ""
 
 let dictionary =
   if !dict_file <> "" then
@@ -64,7 +65,7 @@ let dictionary =
       exit 1
   else
     let () =
-      print_endline "Dictionary not defined; running with empty dictionary"
+      starting_info := "\nDictionary not defined; running with empty dictionary"
     in
     Dictionary.build_dictionary []
 
@@ -75,12 +76,15 @@ let syntax =
       let () = print_endline "Error in loading syntax" in
       exit 1
   else
-    let () = print_endline "Syntax not defined; running with empty syntax" in
-    Syntax.build_syntax ""
+    let () =
+      starting_info :=
+        !starting_info ^ "\nSyntax not defined; running with empty syntax"
+    in
+    Syntax.build_syntax "lexical categories:\nconstituent categories:\nrules:\n"
 
 let main_loop =
   let () = clear_screen () in
-  let () = print_commands () in
+  let () = next_command_prompt !starting_info in
   let exit = ref false in
   while not !exit do
     let command = String.split_on_char ' ' (read_line ()) in
@@ -96,7 +100,7 @@ let main_loop =
           if !syntax_file <> "" then
             next_command_prompt
               (BatFile.with_file_in !syntax_file BatIO.read_all)
-          else next_command_prompt ""
+          else next_command_prompt "Syntax is empty"
       | "add" ->
           let lexical_category = List.nth command 1 in
           let word = List.nth command 2 in
@@ -122,5 +126,5 @@ let main_loop =
           let () = Tree.remove (int_of_string node) !Tree.treelist in
           next_command_prompt "Removed node"
       | _ -> next_command_prompt "Unknown command"
-    with _ -> next_command_prompt "Invalid command syntax"
+    with _ -> next_command_prompt "Invalid command"
   done
