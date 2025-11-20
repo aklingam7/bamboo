@@ -3,6 +3,16 @@ open Dictionary
 
 exception Wrong
 
+(**Abstraction function: [Leaf {pair = (a,b); id = x}] represents a node
+   containing a lexical category [a] and a word of its type [b], with an
+   associated id number [x]. [NodeOne {t = tr; category = n; id = x}] represents
+   a recursive tree containing a constituent node of category [n], which
+   branches down into subtree [tr]. The tree has an associated id number [x].
+   [NodeTwo {t1 = tr1; t2 = tr2; category = n; id = x}] represents a recursive
+   tree containing a constituent branching node of category [n], which branches
+   down into subtree [tr1] and [tr2]. The tree has an associated id number [x].
+   Representation Invariants: [id] >= 0; both [t1] and [t2] in [NodeTwo] can not
+   have their respective [category] define lexical nodes.*)
 type tree =
   | Leaf of {
       pair : lexeme;
