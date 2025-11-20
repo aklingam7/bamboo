@@ -1,6 +1,17 @@
 exception InvalidSyntax
 exception MalformedSyntax
 
+(** Abstraction function: The [lexical_categories] list [l1; ...; ln] represents
+    the n distinct lexical categories recognized as valid by the syntax, using
+    their names or shorthand. The [constituent_categories] list [c1; ... ;cn]
+    similarly represents the n distinct constituent categories recognized by the
+    syntax. The [rulset] [c1 * s1; ...; c1 * sn] list represents the acceptable
+    constituent structures of the syntax, with each category coming first in the
+    pair, followed by the categories of the constituents it is composed of.
+    Representation invariant: The lists are internally consistent; i.e., there
+    is no category in the rules of ruleset which is not contained within
+    lexical_categories or constituent_categories. *)
+
 type syntax = {
   lexical_categories : string list;
   constituent_categories : string list;
