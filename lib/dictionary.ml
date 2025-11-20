@@ -1,3 +1,16 @@
+(**
+
+Abstraction functions: The tuple (category, word) represents the abstract
+concept of a lexeme of the form {Word_Category, Word}.
+Representation invariant: This cannot be empty.
+
+Abstraction functions: The list [l1; ...; ln] represents the dictionary
+[{Word_Category_1, Word_1}, ..., {Word_Category_n, Word_n}].
+The empty list [] represents an empty dictionary.
+Representation invariant: Each entry in the dictionary must statisfy the
+lexeme invariant.
+*)
+
 type lexeme = string * string
 type dictionary = lexeme list
 
