@@ -32,6 +32,12 @@ let print_commands () =
       "\tremove <node> -> Removes the given node and all its connections from \
        the tree; can only remove top-level nodes (i.e., nodes with no parents)"
   in
+  let () =
+    print_endline
+      "\texpand <lexical-category> <word> -> Expands the current dictionary \
+       with a word containing the described lexeme. Note: this also modifies \
+       the dictionary file passed in"
+  in
   ()
 
 let next_command_prompt extra =
@@ -58,19 +64,20 @@ let () = Arg.parse speclist anon_fun usage_msg
 let starting_info = ref ""
 
 let dictionary =
-  if !dict_file <> "" then
-    try Dictionary.build_dictionary (Csv.load !dict_file)
-    with _ ->
-      let () = print_endline "Error in loading dictionary" in
-      exit 1
-  else
-    let () =
-      starting_info :=
-        "\n\
-         Dictionary not defined; running with dictionary suppressed (all words \
-         permitted without checking)"
-    in
-    Dictionary.suppressed_dictionary ()
+  ref
+    (if !dict_file <> "" then
+       try Dictionary.build_dictionary (Csv.load !dict_file)
+       with _ ->
+         let () = print_endline "Error in loading dictionary" in
+         exit 1
+     else
+       let () =
+         starting_info :=
+           "\n\
+            Dictionary not defined; running with dictionary suppressed (all \
+            words permitted without checking)"
+       in
+       Dictionary.suppressed_dictionary)
 
 let syntax =
   if !syntax_file <> "" then
@@ -107,7 +114,7 @@ let main_loop =
       | "add" ->
           let lexical_category = List.nth command 1 in
           let word = List.nth command 2 in
-          let () = Tree.add lexical_category word syntax dictionary in
+          let () = Tree.add lexical_category word syntax !dictionary in
           next_command_prompt "Added node"
       | "connect" ->
           let constituent_category = List.nth command 1 in
@@ -128,6 +135,18 @@ let main_loop =
           let node = List.nth command 1 in
           let () = Tree.remove (int_of_string node) !Tree.treelist in
           next_command_prompt "Removed node"
+      | "expand" ->
+          let lexical_category = List.nth command 1 in
+          let word = List.nth command 2 in
+
+          (* Adds to the abstract dictionary representation *)
+          let lexeme = Dictionary.create_lexeme lexical_category word in
+          dictionary := Dictionary.augment_dictionary lexeme !dictionary;
+
+          (* Adds to the physical dictionary file user passed in *)
+          Csv.save !dict_file ([ lexical_category; word ] :: Csv.load !dict_file);
+
+          next_command_prompt "Added word to dictionary"
       | _ -> next_command_prompt "Unknown command"
     with _ -> next_command_prompt "Invalid command"
   done

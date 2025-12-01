@@ -37,7 +37,12 @@ let build_dictionary data : dictionary =
   in
   Dictionary (builder data)
 
-let suppressed_dictionary () = Suppressed
+let suppressed_dictionary = Suppressed
+
+let augment_dictionary lex (dict : dictionary) =
+  match dict with
+  | Suppressed -> Suppressed
+  | Dictionary old -> Dictionary (lex :: old)
 
 let mem lex (dict : dictionary) : bool =
   let rec checker (lex : lexeme) dict =

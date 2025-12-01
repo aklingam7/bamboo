@@ -21,10 +21,14 @@ val build_dictionary : string list list -> dictionary
     determiner, verb, etc.) with a word in the given language. Raises a
     [Failure] if data is not of size nx2. *)
 
-val suppressed_dictionary : unit -> dictionary
-(** [suppressed_dictionary] takes in a unit and returns a type of dictionary.
-    This should be used when an empty dictionary is passed in, or the user wants
-    to use any word they wish without receiving word not found errors. *)
+val suppressed_dictionary : dictionary
+(** [suppressed_dictionary] is a type of dictionary used when an empty
+    dictionary file is passed in, or when the user wants to use any word they
+    wish without receiving word not found errors. *)
+
+val augment_dictionary : lexeme -> dictionary -> dictionary
+(** [augment_dictionary lexeme dictionary] adds the passed in lexeme it to the
+    dictionary being used. *)
 
 val mem : lexeme -> dictionary -> bool
 (** [mem lexeme dictionary] checks if the given lexeme is in the provided
