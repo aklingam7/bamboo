@@ -42,7 +42,7 @@ let next_command_prompt extra =
   print_commands ()
 
 let usage_msg =
-  "Correct usage: dune exec bin/main.exe -s <syntax-file> -d <dict-file>"
+  "Correct usage: dune exec bin/main.exe -s <syntax-file> [-d <dict-file>]"
 
 let dict_file = ref ""
 let syntax_file = ref ""
@@ -65,9 +65,12 @@ let dictionary =
       exit 1
   else
     let () =
-      starting_info := "\nDictionary not defined; running with empty dictionary"
+      starting_info :=
+        "\n\
+         Dictionary not defined; running with dictionary suppressed (all words \
+         permitted without checking)"
     in
-    Dictionary.build_dictionary []
+    Dictionary.suppressed_dictionary ()
 
 let syntax =
   if !syntax_file <> "" then
