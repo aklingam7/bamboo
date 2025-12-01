@@ -28,7 +28,8 @@ val suppressed_dictionary : dictionary
 
 val augment_dictionary : lexeme -> dictionary -> dictionary
 (** [augment_dictionary lexeme dictionary] adds the passed in lexeme it to the
-    dictionary being used. *)
+    dictionary being used. If the dictionary passed in was suppressed, it simply
+    returns a suppressed dictionary. *)
 
 val mem : lexeme -> dictionary -> bool
 (** [mem lexeme dictionary] checks if the given lexeme is in the provided

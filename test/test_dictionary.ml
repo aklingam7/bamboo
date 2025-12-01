@@ -92,4 +92,11 @@ let dictionary_tests =
             (augment_dictionary
                (create_lexeme "Determiner" "the")
                (build_dictionary raw_test_dict))) );
+    ( "testing augmenting a suppressed dictionary 1" >:: fun _ ->
+      assert (
+        len_dictionary suppressed_dictionary
+        = len_dictionary
+            (augment_dictionary
+               (create_lexeme "Determiner" "the")
+               suppressed_dictionary)) );
   ]

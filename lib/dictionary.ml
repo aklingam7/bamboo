@@ -53,9 +53,9 @@ let mem lex (dict : dictionary) : bool =
 
   match dict with
   | Suppressed ->
+      (* Suppressed is used when we want to permit every possible word, i.e. no
+         dictionary membership checking is needed since every word is allowed *)
       true
-      (* Because suppressed is used when we want to permit every possible word,
-         i.e. no dictionary membership checking *)
   | Dictionary list -> checker lex list
 
 let len_dictionary dictionary =
