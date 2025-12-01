@@ -57,3 +57,8 @@ let mem lex (dict : dictionary) : bool =
       (* Because suppressed is used when we want to permit every possible word,
          i.e. no dictionary membership checking *)
   | Dictionary list -> checker lex list
+
+let len_dictionary dictionary =
+  match dictionary with
+  | Suppressed -> -1
+  | Dictionary dict -> List.length dict

@@ -33,3 +33,9 @@ val augment_dictionary : lexeme -> dictionary -> dictionary
 val mem : lexeme -> dictionary -> bool
 (** [mem lexeme dictionary] checks if the given lexeme is in the provided
     dictionary. *)
+
+val len_dictionary : dictionary -> int
+(** [len_dictionary dictionary] is the length of the dictionary, i.e. how many
+    lexeme entries can be found in the dictionary. If the dictionary is a
+    suppressed dictionary, it gives -1. This is a utility function that can be
+    used where ever needed, such as in test cases and dictionary validation. *)
