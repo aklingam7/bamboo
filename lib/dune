@@ -2,4 +2,5 @@
  (name bamboo)
  (libraries str)
  (preprocess
-  (pps ppx_string)))
+  (pps ppx_string))
+  (instrumentation (backend bisect_ppx)))
