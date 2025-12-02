@@ -113,7 +113,9 @@ let main_loop =
       | "add" ->
           let lexical_category = List.nth command 1 in
           let word = List.nth command 2 in
-          let () = Tree.add lexical_category word syntax !dictionary in
+          let () =
+            Tree.add lexical_category word syntax !dictionary Tree.treelist
+          in
           next_command_prompt "Added node"
       | "connect" ->
           let constituent_category = List.nth command 1 in
@@ -122,17 +124,18 @@ let main_loop =
           in
           let () =
             if List.length command <= 3 then
-              Tree.connect1 node1 constituent_category syntax
+              Tree.connect1 node1 constituent_category syntax Tree.treelist
             else
               let node2 =
                 Tree.get (int_of_string (List.nth command 3)) !Tree.treelist
               in
               Tree.connect2 node1 node2 constituent_category syntax
+                Tree.treelist
           in
           next_command_prompt "Added connecting node"
       | "remove" ->
           let node = List.nth command 1 in
-          let () = Tree.remove (int_of_string node) !Tree.treelist in
+          let () = Tree.remove (int_of_string node) Tree.treelist in
           next_command_prompt "Removed node"
       | "expand" ->
           let lexical_category = List.nth command 1 in

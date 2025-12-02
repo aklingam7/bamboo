@@ -7,7 +7,7 @@ exception Wrong
 
 val treelist : tree list ref
 
-val add : string -> string -> syntax -> dictionary -> unit
+val add : string -> string -> syntax -> dictionary -> tree list ref -> unit
 (** [add category word syntax dictionary] connects a word and its syntactic
     category to its <type>. Requires [category] is a string represeting a valid
     syntactic category of [syntax] and [word] is matched to that syntactic
@@ -17,16 +17,16 @@ val get : int -> tree list -> tree
 (** [get id treelist] returns the node associated with the given id in
     [treelist]. *)
 
-val remove : int -> tree list -> unit
+val remove : int -> tree list ref -> unit
 (** [remove id treelist] removes the node associated with the given id from
     [treelist]. *)
 
-val connect2 : tree -> tree -> string -> syntax -> unit
+val connect2 : tree -> tree -> string -> syntax -> tree list ref -> unit
 (** [connect t1 t2] adds a constituent node parenting the two given nodes (in
     order) to the syntax tree, and removes their children from the toplevel of
     treelist. *)
 
-val connect1 : tree -> string -> syntax -> unit
+val connect1 : tree -> string -> syntax -> tree list ref -> unit
 (** [connect t1] adds a constituent node parenting the given node to the syntax
     tree, and removes its children from the toplevel of treelist. *)
 

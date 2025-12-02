@@ -90,13 +90,13 @@ let rec make_constituent_node tree =
           }
       | _ -> { category; children = CC (c1, c2) })
 
-let add cat word syn dict =
+let add cat word syn dict trlst =
   if
     check_lexeme syn { category = cat; child = word }
     && mem (create_lexeme cat word) dict
   then
     let node = Leaf { pair = create_lexeme cat word; id = newID () } in
-    treelist := !treelist @ [ node ]
+    trlst := !trlst @ [ node ]
   else raise Wrong
 
 let rec get node_id (lst : tree list) =
@@ -108,7 +108,7 @@ let rec get node_id (lst : tree list) =
       | NodeTwo { id } -> if node_id = id then h else get node_id t
       | Leaf { id } -> if node_id = id then h else get node_id t)
 
-let remove removal_id (lst : tree list) =
+let remove removal_id (lst : tree list ref) =
   let rec internal prev lst =
     let rec claimed_ids tree =
       match tree with
@@ -151,9 +151,9 @@ let remove removal_id (lst : tree list) =
             (List.rev prev @ children @ t)
         else internal (h :: prev) t
   in
-  treelist := internal [] lst
+  lst := internal [] !lst
 
-let fade fade_id (lst : tree list) =
+let fade fade_id (lst : tree list ref) =
   let rec internal prev lst =
     match lst with
     | [] -> []
@@ -166,9 +166,9 @@ let fade fade_id (lst : tree list) =
         in
         if id = fade_id then List.rev prev @ t else internal (h :: prev) t
   in
-  treelist := internal [] lst
+  lst := internal [] !lst
 
-let connect2 t1 t2 category syntax =
+let connect2 t1 t2 category syntax trlst =
   let new_id = newID () in
   if
     check_constituent syntax
@@ -176,20 +176,20 @@ let connect2 t1 t2 category syntax =
   then
     let () =
       match t1 with
-      | NodeOne { id } -> fade id !treelist
-      | NodeTwo { id } -> fade id !treelist
-      | Leaf { id } -> fade id !treelist
+      | NodeOne { id } -> fade id trlst
+      | NodeTwo { id } -> fade id trlst
+      | Leaf { id } -> fade id trlst
     in
     let () =
       match t2 with
-      | NodeOne { id } -> fade id !treelist
-      | NodeTwo { id } -> fade id !treelist
-      | Leaf { id } -> fade id !treelist
+      | NodeOne { id } -> fade id trlst
+      | NodeTwo { id } -> fade id trlst
+      | Leaf { id } -> fade id trlst
     in
-    treelist := NodeTwo { t1; t2; category; id = new_id } :: !treelist
+    trlst := NodeTwo { t1; t2; category; id = new_id } :: !trlst
   else raise Wrong
 
-let connect1 tree const syn =
+let connect1 tree const syn trlst =
   let id = newID () in
   if
     check_constituent syn
@@ -197,11 +197,11 @@ let connect1 tree const syn =
   then
     let () =
       match tree with
-      | NodeOne { id } -> fade id !treelist
-      | NodeTwo { id } -> fade id !treelist
-      | Leaf { id } -> fade id !treelist
+      | NodeOne { id } -> fade id trlst
+      | NodeTwo { id } -> fade id trlst
+      | Leaf { id } -> fade id trlst
     in
-    treelist := NodeOne { t = tree; category = const; id } :: !treelist
+    trlst := NodeOne { t = tree; category = const; id } :: !trlst
   else raise Wrong
 
 let rec to_string tree =
