@@ -28,15 +28,9 @@ val build_dictionary : string list list -> dictionary
     determiner, verb, etc.) with a word in the given language. Raises a
     [Failure] if data is not of size nx2. *)
 
-val suppressed_dictionary : dictionary
-(** [suppressed_dictionary] is a type of dictionary used when an empty
-    dictionary file is passed in, or when the user wants to use any word they
-    wish without receiving word not found errors. *)
-
 val augment_dictionary : lexeme -> dictionary -> dictionary
-(** [augment_dictionary lexeme dictionary] adds the passed in lexeme it to the
-    dictionary being used. If the dictionary passed in was suppressed, it simply
-    returns a suppressed dictionary. *)
+(** [augment_dictionary lexeme dictionary] adds the passed in lexeme to the
+    dictionary being used. *)
 
 val mem : lexeme -> dictionary -> bool
 (** [mem lexeme dictionary] checks if the given lexeme is in the provided
@@ -44,6 +38,6 @@ val mem : lexeme -> dictionary -> bool
 
 val len_dictionary : dictionary -> int
 (** [len_dictionary dictionary] is the length of the dictionary, i.e. how many
-    lexeme entries can be found in the dictionary. If the dictionary is a
-    suppressed dictionary, it gives -1. This is a utility function that can be
-    used where ever needed, such as in test cases and dictionary validation. *)
+    lexeme entries can be found in the dictionary. This is a utility function
+    that can be used where ever needed, such as in test cases and dictionary
+    validation. *)

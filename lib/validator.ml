@@ -68,8 +68,11 @@ let rec as_constituent node category =
           { category; children = CC (c1, c2) }
       | Leaf _, Leaf _ -> failwith "RI violation: NodeTwo cannot have two Leafs")
 
-let validate_lexeme category word syntax dict =
-  check_lexeme syntax { category; child = word } && mem (create_lexeme category word) dict
+let validate_lexeme category word syntax dict_opt =
+  let syntax_valid = check_lexeme syntax { category; child = word } in
+  match dict_opt with
+  | None -> syntax_valid
+  | Some dict -> syntax_valid && mem (create_lexeme category word) dict
 
 let validate_constituent node category syntax =
   check_constituent syntax (as_constituent node category)

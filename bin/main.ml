@@ -66,7 +66,7 @@ let starting_info = ref ""
 let dictionary =
   ref
     (if !dict_file <> "" then
-       try Dictionary.build_dictionary (Csv.load !dict_file)
+       try Some (Dictionary.build_dictionary (Csv.load !dict_file))
        with _ ->
          let () = print_endline "Error in loading dictionary" in
          exit 1
@@ -77,7 +77,7 @@ let dictionary =
             Dictionary not defined; running with dictionary suppressed (all \
             words permitted without checking)"
        in
-       Dictionary.suppressed_dictionary)
+       None)
 
 let syntax =
   if !syntax_file <> "" then
@@ -157,7 +157,10 @@ let main_loop =
 
           (* Adds to the abstract dictionary representation *)
           let lexeme = Dictionary.create_lexeme lexical_category word in
-          dictionary := Dictionary.augment_dictionary lexeme !dictionary;
+          dictionary :=
+            (match !dictionary with
+             | None -> None
+             | Some dict -> Some (Dictionary.augment_dictionary lexeme dict));
 
           (* Adds to the physical dictionary file user passed in *)
           Csv.save !dict_file ([ lexical_category; word ] :: Csv.load !dict_file);

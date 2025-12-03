@@ -64,27 +64,8 @@ let dictionary_tests =
         (Failure
            "The dictionary received is of an invalid type. The CSV must be of \
             size nx2") (fun () -> build_dictionary invalid_dict_3) );
-    (* Can't test building a suppressed dictionary directly since it's an
-       abstract type *)
-    ( "testing building a suppressed dictionary and asserting everything is a \
-       member 1"
-    >:: fun _ ->
-      assert (mem (create_lexeme "Determiner" "the") suppressed_dictionary) );
-    ( "testing building a suppressed dictionary and asserting everything is a \
-       member 2"
-    >:: fun _ -> assert (mem (create_lexeme "ç̷̧̯̬̱̠̗͓̝̟̃́̊̏̓͑́̚͘ã̸̧̛̪̠͇̠̥̳̎̀́̀̄̈́̃̉̒̂͊͝t̸̨͔̯͉̣̟͈̼͖̻̮̥̱̀͒̄͜" "w̸̟̮̪̘̮̫̬̳̪͍̭͓̹̤̾̿͝ͅo̸̧̡̱̲̣̫̔̈́͌͝r̸̛̪̱̳̣̩̼̊̾̀͆̅̏̑͑̔͗̆̕̕͜ḓ̷̇̀̈́̋̄̉̀̕ͅ") suppressed_dictionary)
-    );
-    ( "testing building a suppressed dictionary and asserting everything is a \
-       member 3"
-    >:: fun _ ->
-      assert (
-        mem
-          (create_lexeme "Noun" "totally_not_a_real_word")
-          suppressed_dictionary) );
     ( "testing dictionary length" >:: fun _ ->
       assert (len_dictionary (build_dictionary raw_test_dict) = 5) );
-    ( "testing suppressed dictionary length" >:: fun _ ->
-      assert (len_dictionary suppressed_dictionary = -1) );
     ( "testing augmenting a dictionary" >:: fun _ ->
       assert (
         len_dictionary (build_dictionary raw_test_dict) + 1
@@ -92,11 +73,4 @@ let dictionary_tests =
             (augment_dictionary
                (create_lexeme "Determiner" "the")
                (build_dictionary raw_test_dict))) );
-    ( "testing augmenting a suppressed dictionary 1" >:: fun _ ->
-      assert (
-        len_dictionary suppressed_dictionary
-        = len_dictionary
-            (augment_dictionary
-               (create_lexeme "Determiner" "the")
-               suppressed_dictionary)) );
   ]

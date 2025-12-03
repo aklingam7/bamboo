@@ -39,7 +39,7 @@ let sample_syntax =
 let tree_tests =
   [
     ( "adding leaf node to empty list" >:: fun _ ->
-      if validate_lexeme "N" "boy" sample_syntax sample_dict then
+      if validate_lexeme "N" "boy" sample_syntax (Some sample_dict) then
         let t, id1 = add empty (create_lexeme "N" "boy") in
         assert_equal "[Category: N | Word: boy] (id: 1)\n"
           (to_string_list (to_list t))
@@ -47,8 +47,8 @@ let tree_tests =
       else assert_failure "Validation failed" );
     ( "adding leaf node to non-empty list" >:: fun _ ->
       if
-        validate_lexeme "N" "boy" sample_syntax sample_dict
-        && validate_lexeme "V" "walks" sample_syntax sample_dict
+        validate_lexeme "N" "boy" sample_syntax (Some sample_dict)
+        && validate_lexeme "V" "walks" sample_syntax (Some sample_dict)
       then
         let t, id1 = add empty (create_lexeme "N" "boy") in
         let t, id2 = add t (create_lexeme "V" "walks") in

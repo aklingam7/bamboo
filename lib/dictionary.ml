@@ -13,9 +13,7 @@ lexeme invariant.
 
 type lexeme = string * string
 
-type dictionary =
-  | Suppressed
-  | Dictionary of lexeme list
+type dictionary = lexeme list
 
 let create_lexeme lexical_category word : lexeme = (lexical_category, word)
 
@@ -35,14 +33,9 @@ let build_dictionary data : dictionary =
           "The dictionary received is of an invalid type. The CSV must be of \
            size nx2"
   in
-  Dictionary (builder data)
+  builder data
 
-let suppressed_dictionary = Suppressed
-
-let augment_dictionary lex (dict : dictionary) =
-  match dict with
-  | Suppressed -> Suppressed
-  | Dictionary old -> Dictionary (lex :: old)
+let augment_dictionary lex (dict : dictionary) = lex :: dict
 
 let mem lex (dict : dictionary) : bool =
   let rec checker (lex : lexeme) dict =
@@ -50,15 +43,6 @@ let mem lex (dict : dictionary) : bool =
     | [] -> false
     | lx :: dict_tl -> if lex = lx then true else checker lex dict_tl
   in
+  checker lex dict
 
-  match dict with
-  | Suppressed ->
-      (* Suppressed is used when we want to permit every possible word, i.e. no
-         dictionary membership checking is needed since every word is allowed *)
-      true
-  | Dictionary list -> checker lex list
-
-let len_dictionary dictionary =
-  match dictionary with
-  | Suppressed -> -1
-  | Dictionary dict -> List.length dict
+let len_dictionary dictionary = List.length dictionary
