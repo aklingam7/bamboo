@@ -1,12 +1,32 @@
 open Syntax
 open Dictionary
 
-(** [tree] represents a syntax tree construction workspace for X-bar theory.
-    Despite the singular name, this represents a collection (forest) of
-    disconnected syntax trees being built. The type is abstract to encapsulate
-    ID generation and tree management. Each tree node has a unique ID that can
-    be used to reference it in operations. *)
-type tree
+(** [tree] represents an individual node in a syntax tree. This type is
+    transparent to allow pattern matching for visualization and analysis.
+
+    - [Leaf] contains a lexeme (word + category) and unique ID
+    - [NodeOne] is a constituent with one child and unique ID
+    - [NodeTwo] is a constituent with two children and unique ID
+
+    Note: The module represents a workspace containing multiple disconnected
+    trees (a forest), managed via the treelist reference. Nodes should only be
+    constructed via the functions in this module to ensure validity. *)
+type tree =
+  | Leaf of {
+      pair : lexeme;
+      id : int;
+    }
+  | NodeOne of {
+      t : tree;
+      category : string;
+      id : int;
+    }
+  | NodeTwo of {
+      t1 : tree;
+      t2 : tree;
+      category : string;
+      id : int;
+    }
 
 exception Wrong
 
