@@ -26,7 +26,6 @@ let invalid_dict_3 = [ [] ]
    in the combined test suite *)
 let dictionary_tests =
   [
-    ("a trivial test" >:: fun _ -> assert_equal 0 0 ~printer:string_of_int);
     (* Can't test creating a lexeme directly since it's an abstract type *)
     ( "testing creating a lexeme and stringifying it" >:: fun _ ->
       assert_equal
