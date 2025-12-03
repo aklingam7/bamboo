@@ -83,4 +83,43 @@ let validator_tests =
     );
     ( "validate_lexeme with None - empty string word" >:: fun _ ->
       assert (validate_lexeme "N" "" sample_syntax None) );
+    ( "validate_constituent with NodeOne wrapping NodeOne" >:: fun _ ->
+      (* Test NodeOne { t = NodeOne {...} } - line 31-33 in validator.ml *)
+      let leaf = Leaf { pair = create_lexeme "N" "cat"; id = 1 } in
+      let inner_node = NodeOne { t = leaf; category = "NP"; id = 2 } in
+      let outer_node = NodeOne { t = inner_node; category = "NP"; id = 3 } in
+      (* NP -> NP is not valid, so this should fail *)
+      assert (not (validate_constituent outer_node "NP" sample_syntax)) );
+    ( "validate_constituent with NodeOne wrapping NodeTwo" >:: fun _ ->
+      (* Test NodeOne { t = NodeTwo {...} } - line 31-33 in validator.ml *)
+      let leaf1 = Leaf { pair = create_lexeme "D" "the"; id = 1 } in
+      let leaf2 = Leaf { pair = create_lexeme "N" "cat"; id = 2 } in
+      let node_np = NodeOne { t = leaf2; category = "NP"; id = 3 } in
+      let node_dp = NodeTwo { t1 = leaf1; t2 = node_np; category = "DP"; id = 4 } in
+      let outer_node = NodeOne { t = node_dp; category = "DP"; id = 5 } in
+      (* DP -> DP is not valid, so this should fail *)
+      assert (not (validate_constituent outer_node "DP" sample_syntax)) );
+    ( "validate_constituent with NodeTwo constituent + leaf (CL case)"
+    >:: fun _ ->
+      (* Test lines 49-61 in validator.ml: NodeTwo with constituent first, leaf second *)
+      let leaf_n = Leaf { pair = create_lexeme "N" "cat"; id = 1 } in
+      let node_np = NodeOne { t = leaf_n; category = "NP"; id = 2 } in
+      let leaf_v = Leaf { pair = create_lexeme "V" "runs"; id = 3 } in
+      (* This creates a VP with constituent NP on left, lexeme V on right *)
+      let node_vp = NodeTwo { t1 = node_np; t2 = leaf_v; category = "VP"; id = 4 } in
+      (* This should fail as VP doesn't have a rule for NP V *)
+      assert (not (validate_constituent node_vp "VP" sample_syntax)) );
+    ( "validate_constituent with NodeTwo using NodeTwo children" >:: fun _ ->
+      (* Test lines 62-68: NodeTwo with two NodeTwo children *)
+      let leaf1 = Leaf { pair = create_lexeme "V" "runs"; id = 1 } in
+      let node_vp1 = NodeOne { t = leaf1; category = "VP"; id = 2 } in
+      let leaf2 = Leaf { pair = create_lexeme "D" "the"; id = 3 } in
+      let leaf3 = Leaf { pair = create_lexeme "N" "cat"; id = 4 } in
+      let node_np = NodeOne { t = leaf3; category = "NP"; id = 5 } in
+      let node_dp = NodeTwo { t1 = leaf2; t2 = node_np; category = "DP"; id = 6 } in
+      let node_vp2 = NodeTwo { t1 = leaf1; t2 = node_dp; category = "VP"; id = 7 } in
+      (* Create a structure with two NodeTwo children *)
+      let combined = NodeTwo { t1 = node_vp1; t2 = node_vp2; category = "DP"; id = 8 } in
+      (* This should fail as DP -> VP VP is not valid *)
+      assert (not (validate_constituent combined "DP" sample_syntax)) );
   ]
