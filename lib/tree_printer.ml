@@ -107,8 +107,8 @@ let two_branch sub1 sub2 subs cur =
   in
   cur.rep ^ "\n" ^ !acc ^ subs
 
-let rec to_fancy_string_helper (tree : tree) : fancy_string =
-  match tree with
+let rec to_fancy_string_helper (node : tree_node) : fancy_string =
+  match node with
   | Leaf { pair; id } ->
       let top = get_lexeme_category pair ^ " (" ^ string_of_int id ^ ")" in
       let bottom = get_lexeme_word pair in
@@ -152,19 +152,23 @@ let rec to_fancy_string_helper (tree : tree) : fancy_string =
       let temp_rep = { rep = cur; mid; width } in
       { rep = two_branch sub1 sub2 (fst subs) temp_rep; mid; width }
 
-let to_fancy_string (tree : tree) : string = (to_fancy_string_helper tree).rep
-
-let to_fancy_string_list (trees : tree list) : string =
-  match trees with
+let rec to_fancy_string (t : tree) : string =
+  match to_list t with
   | [] -> ""
-  | t :: ts ->
-      let start = to_fancy_string_helper t in
+  | [ node ] -> (to_fancy_string_helper node).rep
+  | nodes -> to_fancy_string_list nodes
+
+and to_fancy_string_list (nodes : tree_node list) : string =
+  match nodes with
+  | [] -> ""
+  | node :: rest ->
+      let start = to_fancy_string_helper node in
       fst
         (List.fold_left
-           (fun (acc_rep, acc_width) tree ->
-             let next = to_fancy_string_helper tree in
+           (fun (acc_rep, acc_width) n ->
+             let next = to_fancy_string_helper n in
              let combined_rep, combined_width =
                combine_subs { rep = acc_rep; mid = 0; width = acc_width } next
              in
              (combined_rep, combined_width))
-           (start.rep, start.width) ts)
+           (start.rep, start.width) rest)

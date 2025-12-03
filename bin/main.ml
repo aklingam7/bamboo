@@ -1,4 +1,5 @@
 open Bamboo
+open Bamboo.Validator
 
 let clear_screen () =
   let () = print_string "\027[2J" in
@@ -40,9 +41,9 @@ let print_commands () =
   in
   ()
 
-let next_command_prompt extra =
+let next_command_prompt tree extra =
   let () = clear_screen () in
-  let () = print_endline (Tree_printer.to_fancy_string_list !Tree.treelist) in
+  let () = print_endline (Tree_printer.to_fancy_string tree) in
   let () = print_endline ("\n" ^ extra ^ "\n") in
   print_commands ()
 
@@ -92,8 +93,9 @@ let syntax =
     Syntax.build_syntax "lexical categories:\nconstituent categories:\nrules:\n"
 
 let main_loop =
+  let tree = ref Tree.empty in
   let () = clear_screen () in
-  let () = next_command_prompt !starting_info in
+  let () = next_command_prompt !tree !starting_info in
   let exit = ref false in
   while not !exit do
     let command = String.split_on_char ' ' (read_line ()) in
@@ -107,36 +109,48 @@ let main_loop =
           ()
       | "syntax" ->
           if !syntax_file <> "" then
-            next_command_prompt
+            next_command_prompt !tree
               (BatFile.with_file_in !syntax_file BatIO.read_all)
-          else next_command_prompt "Syntax is empty"
+          else next_command_prompt !tree "Syntax is empty"
       | "add" ->
           let lexical_category = List.nth command 1 in
           let word = List.nth command 2 in
-          let () =
-            Tree.add lexical_category word syntax !dictionary Tree.treelist
-          in
-          next_command_prompt "Added node"
+          if validate_lexeme lexical_category word syntax !dictionary then (
+            let lexeme = Dictionary.create_lexeme lexical_category word in
+            let new_tree, _ = Tree.add !tree lexeme in
+            tree := new_tree;
+            next_command_prompt !tree "Added node")
+          else next_command_prompt !tree "Error: Invalid lexeme"
       | "connect" ->
           let constituent_category = List.nth command 1 in
-          let node1 =
-            Tree.get (int_of_string (List.nth command 2)) !Tree.treelist
-          in
-          let () =
-            if List.length command <= 3 then
-              Tree.connect1 node1 constituent_category syntax Tree.treelist
-            else
-              let node2 =
-                Tree.get (int_of_string (List.nth command 3)) !Tree.treelist
+          let node1 = Tree.get !tree (int_of_string (List.nth command 2)) in
+          if List.length command <= 3 then (
+            let test_node =
+              Tree.NodeOne { t = node1; category = constituent_category; id = 0 }
+            in
+            if validate_constituent test_node constituent_category syntax then (
+              let new_tree, _ = Tree.connect1 !tree node1 constituent_category in
+              tree := new_tree;
+              next_command_prompt !tree "Added connecting node")
+            else next_command_prompt !tree "Error: Invalid constituent")
+          else
+            let node2 = Tree.get !tree (int_of_string (List.nth command 3)) in
+            let test_node =
+              Tree.NodeTwo
+                { t1 = node1; t2 = node2; category = constituent_category; id = 0 }
+            in
+            if validate_constituent test_node constituent_category syntax then (
+              let new_tree, _ =
+                Tree.connect2 !tree node1 node2 constituent_category
               in
-              Tree.connect2 node1 node2 constituent_category syntax
-                Tree.treelist
-          in
-          next_command_prompt "Added connecting node"
+              tree := new_tree;
+              next_command_prompt !tree "Added connecting node")
+            else next_command_prompt !tree "Error: Invalid constituent"
       | "remove" ->
           let node = List.nth command 1 in
-          let () = Tree.remove (int_of_string node) Tree.treelist in
-          next_command_prompt "Removed node"
+          let new_tree = Tree.remove !tree (int_of_string node) in
+          tree := new_tree;
+          next_command_prompt !tree "Removed node"
       | "expand" ->
           let lexical_category = List.nth command 1 in
           let word = List.nth command 2 in
@@ -148,11 +162,12 @@ let main_loop =
           (* Adds to the physical dictionary file user passed in *)
           Csv.save !dict_file ([ lexical_category; word ] :: Csv.load !dict_file);
 
-          next_command_prompt "Added word to dictionary"
-      | _ -> next_command_prompt "Unknown command"
+          next_command_prompt !tree "Added word to dictionary"
+      | _ -> next_command_prompt !tree "Unknown command"
     with
-    | Tree.Wrong -> next_command_prompt "Error: Invalid tree operation"
-    | Failure msg -> next_command_prompt ("Error: " ^ msg)
-    | Invalid_argument msg -> next_command_prompt ("Invalid argument: " ^ msg)
-    | _ -> next_command_prompt "Unknown error occurred. Please try again."
+    | Tree.Wrong -> next_command_prompt !tree "Error: Invalid tree operation"
+    | Failure msg -> next_command_prompt !tree ("Error: " ^ msg)
+    | Invalid_argument msg ->
+        next_command_prompt !tree ("Invalid argument: " ^ msg)
+    | _ -> next_command_prompt !tree "Unknown error occurred. Please try again."
   done

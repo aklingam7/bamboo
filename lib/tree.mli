@@ -1,66 +1,62 @@
-open Syntax
 open Dictionary
 
-(** [tree] represents an individual node in a syntax tree. This type is
+(** [tree] represents a syntax tree construction workspace for X-bar theory.
+    This type encapsulates the forest of disconnected syntax trees being built,
+    along with ID generation state. It is abstract to ensure proper management
+    of node IDs and tree structure. *)
+type tree
+
+(** [tree_node] represents an individual node in a syntax tree. This type is
     transparent to allow pattern matching for visualization and analysis.
 
     - [Leaf] contains a lexeme (word + category) and unique ID
     - [NodeOne] is a constituent with one child and unique ID
-    - [NodeTwo] is a constituent with two children and unique ID
-
-    Note: The module represents a workspace containing multiple disconnected
-    trees (a forest), managed via the treelist reference. Nodes should only be
-    constructed via the functions in this module to ensure validity. *)
-type tree =
+    - [NodeTwo] is a constituent with two children and unique ID *)
+type tree_node =
   | Leaf of {
       pair : lexeme;
       id : int;
     }
   | NodeOne of {
-      t : tree;
+      t : tree_node;
       category : string;
       id : int;
     }
   | NodeTwo of {
-      t1 : tree;
-      t2 : tree;
+      t1 : tree_node;
+      t2 : tree_node;
       category : string;
       id : int;
     }
 
 exception Wrong
 
-val treelist : tree list ref
+val empty : tree
+(** [empty] is an empty syntax tree workspace with no nodes. *)
 
-val add : string -> string -> syntax -> dictionary -> tree list ref -> unit
-(** [add category word syntax dictionary] connects a word and its syntactic
-    category to its <type>. Requires [category] is a string represeting a valid
-    syntactic category of [syntax] and [word] is matched to that syntactic
-    category in [dictionary]. Raises [] if category and word do not match. *)
+val add : tree -> lexeme -> tree * int
+(** [add t lexeme] is [(t', id)] where [t'] is the tree with a new orphan
+    lexeme node added and [id] is its unique identifier. *)
 
-val get : int -> tree list -> tree
-(** [get id treelist] returns the node associated with the given id in
-    [treelist]. *)
+val get : tree -> int -> tree_node
+(** [get t id] returns the tree_node with identifier [id] in [t].
 
-val remove : int -> tree list ref -> unit
-(** [remove id treelist] removes the node associated with the given id from
-    [treelist]. *)
+    Raises: [Wrong] if no node has that id. *)
 
-val connect2 : tree -> tree -> string -> syntax -> tree list ref -> unit
-(** [connect t1 t2] adds a constituent node parenting the two given nodes (in
-    order) to the syntax tree, and removes their children from the toplevel of
-    treelist. *)
+val remove : tree -> int -> tree
+(** [remove t id] is the tree with the node of [id] removed along with any
+    nodes that reference it.
 
-val connect1 : tree -> string -> syntax -> tree list ref -> unit
-(** [connect t1] adds a constituent node parenting the given node to the syntax
-    tree, and removes its children from the toplevel of treelist. *)
+    Raises: [Wrong] if the node doesn't exist. *)
 
-val to_string : tree -> string
-(** [to_string tree] returns a string representation of [tree]. *)
+val connect2 : tree -> tree_node -> tree_node -> string -> tree * int
+(** [connect2 t n1 n2 category] is [(t', id)] where [t'] contains a new
+    constituent of [category] parenting nodes [n1] and [n2], and [id] is the
+    constituent's ID. *)
 
-val to_fancy_string : tree -> string
-(** [to_fancy_string tree] returns a fancy string representation of [tree]. *)
+val connect1 : tree -> tree_node -> string -> tree * int
+(** [connect1 t n category] is [(t', id)] where [t'] contains a new constituent
+    of [category] parenting node [n], and [id] is the constituent's ID. *)
 
-val to_fancy_string_list : tree list -> string
-(** [to_fancy_string_list trees] returns a fancy string representation of each
-    tree in [trees] placed horizontally alongside one another. *)
+val to_list : tree -> tree_node list
+(** [to_list t] is a list of all top-level (orphan) tree nodes in [t]. *)
