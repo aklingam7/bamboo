@@ -1,8 +1,16 @@
-To install the program, download all the files and extract them into their own directory. 
+To install the program, download all the files and extract them into their own directory.
 
 To install all dependencies, first navigate to the root of the project, and then run the following commands:
 
-`opam install ocaml dune csv batteries ounit2 ppx_string`
+First, create an OPAM switch with OCaml 5.2.0 (recommended):
+
+`opam switch create bamboo-project 5.2.0`
+
+`eval $(opam env)`
+
+Then, install the required dependencies:
+
+`opam install dune csv batteries ounit2 ppx_string ppx_inline_test bisect_ppx`
 
 Then, run `dune build`. 
 
