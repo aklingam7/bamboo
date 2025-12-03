@@ -1,5 +1,6 @@
 (test
  (name test_bamboo)
- (modules test_bamboo test_syntax test_tree test_dictionary)
+ (modules test_bamboo test_syntax test_tree test_dictionary test_validator
+   test_tree_printer)
  (deps (glob_files_rec ../data/*))
  (libraries ounit2 bamboo))
