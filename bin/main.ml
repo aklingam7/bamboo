@@ -41,11 +41,20 @@ let print_commands () =
   in
   ()
 
+let print_welcome () =
+  let () = print_endline "╔════════════════════════════════════════╗" in
+  let () = print_endline "║        Welcome to Bamboo!              ║" in
+  let () = print_endline "╚════════════════════════════════════════╝" in
+  ()
+
 let next_command_prompt tree extra =
   let () = clear_screen () in
-  let () = print_endline (Tree_printer.to_fancy_string tree) in
-  let () = print_endline ("\n" ^ extra ^ "\n") in
-  print_commands ()
+  let tree_str = Tree_printer.to_fancy_string tree in
+  let () = if tree_str <> "" then print_endline (tree_str ^ "\n") in
+  let () = if extra <> "" then print_endline (extra ^ "\n") in
+  let () = print_commands () in
+  let () = print_string "\n> " in
+  flush stdout
 
 let usage_msg =
   "Correct usage: dune exec bin/main.exe -s <syntax-file> [-d <dict-file>]"
@@ -95,7 +104,15 @@ let syntax =
 let main_loop =
   let tree = ref Tree.empty in
   let () = clear_screen () in
-  let () = next_command_prompt !tree !starting_info in
+  let () = print_welcome () in
+  let () =
+    let tree_str = Tree_printer.to_fancy_string !tree in
+    if tree_str <> "" then print_endline (tree_str ^ "\n");
+    if !starting_info <> "" then print_endline (!starting_info ^ "\n");
+    print_commands ();
+    print_string "\n> ";
+    flush stdout
+  in
   let exit = ref false in
   while not !exit do
     let command = String.split_on_char ' ' (read_line ()) in
