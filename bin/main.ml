@@ -42,7 +42,7 @@ let print_commands () =
 
 let next_command_prompt extra =
   let () = clear_screen () in
-  let () = print_endline (Tree.to_fancy_string_list !Tree.treelist) in
+  let () = print_endline (Tree_printer.to_fancy_string_list !Tree.treelist) in
   let () = print_endline ("\n" ^ extra ^ "\n") in
   print_commands ()
 
