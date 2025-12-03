@@ -1,6 +1,11 @@
 open Syntax
 open Dictionary
 
+(** [tree] represents a syntax tree construction workspace for X-bar theory.
+    Despite the singular name, this represents a collection (forest) of
+    disconnected syntax trees being built. The type is abstract to encapsulate
+    ID generation and tree management. Each tree node has a unique ID that can
+    be used to reference it in operations. *)
 type tree
 
 exception Wrong

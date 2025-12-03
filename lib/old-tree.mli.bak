@@ -1,0 +1,48 @@
+(** Note: It is important to note this polysemy. This module is a module for a
+    syntax tree and not the tree data structure. In fact, the actual abstraction
+    function for the type maps to the abstract data structure of a labelled
+    graph that is composed of disconnected trees. *)
+(* TODO: Add functionality for all below comments*)
+
+(* Creates empty syntax tree *)
+(* Adds a lexeme node *)
+(* Connects two nodes *)
+(* Removes a node *)
+(* Prints the tree *)
+(* Validates the tree *)
+open Syntax
+open Dictionary
+
+type tree
+
+exception InvalidLexeme
+exception InvalidTree
+
+val add : dictionary -> syntax -> string -> string -> tree
+(** [add d s c str] is the tree with a new orphan lexeme of category [c] and
+    contents [str] that can be used to create constituents using [connect1] and
+    [connect2].
+
+    Raises: [InvalidLexeme] if the lexeme is not a valid entry of [d] or does
+    not have a valid category defined in [s]. *)
+
+val remove : syntax -> int -> tree
+(** [remove s id] is the tree with the node of [id] removed.
+
+    Raises: [InvalidTree] if any constituent of the new tree is not valid under
+    [s]. *)
+
+val connect2 : syntax -> string -> int -> int -> tree
+(** [connect2 s c id1 id2] is a tree containing a new constituent of category
+    [c] which is the concatenation of the nodes of [id1] and [id2].
+
+    Raises: [InvalidTree] if the constituent is not valid under [s]. *)
+
+val connect1 : syntax -> string -> int -> tree
+(** [connect1 s c id] is a tree containing a new constituent of category [c]
+    with a single child (the node of [id]).
+
+    Raises: [InvalidTree] if the constituent is not valid under [s]. *)
+
+val to_string : tree -> string
+(** [to t] prints tree [t1] to output. Requires [t1] is a tree. *)

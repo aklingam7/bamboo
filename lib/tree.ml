@@ -30,7 +30,6 @@ type tree =
       id : int;
     }
 
-(**let idList : (int * tree) list ref = ref []*)
 let treelist : tree list ref = ref []
 
 let newID =
@@ -214,6 +213,11 @@ let rec to_string tree =
       "[" ^ category ^ to_string t1 ^ to_string t2 ^ "] (id: "
       ^ string_of_int id ^ ")"
 
+(** Represents a formatted string with positioning information for tree rendering.
+    Used internally by fancy printing functions to calculate spacing and alignment.
+    - [rep]: The string representation with newlines and spacing
+    - [mid]: The midpoint position for vertical line alignment
+    - [width]: The total width of the string in characters *)
 type fancy_string = {
   rep : string;
   mid : int;

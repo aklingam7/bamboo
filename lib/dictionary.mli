@@ -1,4 +1,11 @@
+(** [lexeme] represents a word paired with its lexical category (e.g., noun, verb).
+    This is an abstract type to ensure lexemes are only created via the proper
+    constructor function. *)
 type lexeme
+
+(** [dictionary] represents a collection of valid lexemes that can be used in
+    syntax tree construction. The dictionary serves as a membership set for
+    validating word-category pairs. *)
 type dictionary
 
 val create_lexeme : string -> string -> lexeme

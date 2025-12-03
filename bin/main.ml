@@ -150,5 +150,9 @@ let main_loop =
 
           next_command_prompt "Added word to dictionary"
       | _ -> next_command_prompt "Unknown command"
-    with _ -> next_command_prompt "Invalid command"
+    with
+    | Tree.Wrong -> next_command_prompt "Error: Invalid tree operation"
+    | Failure msg -> next_command_prompt ("Error: " ^ msg)
+    | Invalid_argument msg -> next_command_prompt ("Invalid argument: " ^ msg)
+    | _ -> next_command_prompt "Unknown error occurred. Please try again."
   done

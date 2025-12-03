@@ -8,9 +8,13 @@ exception MalformedSyntax
     syntax. The [rulset] [c1 * s1; ...; c1 * sn] list represents the acceptable
     constituent structures of the syntax, with each category coming first in the
     pair, followed by the categories of the constituents it is composed of.
-    Representation invariant: The lists are internally consistent; i.e., there
-    is no category in the rules of ruleset which is not contained within
-    lexical_categories or constituent_categories. *)
+    Representation invariant:
+    - [lexical_categories] contains no duplicate entries
+    - [constituent_categories] contains no duplicate entries
+    - [ruleset] may contain arbitrary category names (not necessarily present
+      in the category lists), as the interface specifies that extraneous
+      categories are accepted on purpose
+    - [ruleset] may contain duplicate rules *)
 
 type syntax = {
   lexical_categories : string list;

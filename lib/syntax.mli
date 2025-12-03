@@ -1,6 +1,9 @@
 exception InvalidSyntax
 exception MalformedSyntax
 
+(** [syntax] represents a context-free grammar for X-bar theory, including
+    lexical categories (e.g., N, V, D), constituent categories (e.g., NP, VP, TP),
+    and production rules that define valid constituent structures. *)
 type syntax
 
 type lexical_node = {
