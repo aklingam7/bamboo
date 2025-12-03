@@ -34,7 +34,7 @@ let dp_bad =
    in the combined test suite *)
 let syntax_tests =
   [
-    ("a trivial test" >:: fun _ -> assert_equal 0 0);
+    ("a trivial test" >:: fun _ -> assert_equal 0 0 ~printer:string_of_int);
     ( "testing truthy check_lexeme" >:: fun _ ->
       assert (check_lexeme sample_syntax { category = "N"; child = "truth" }) );
     ( "testing falsey check_lexeme" >:: fun _ ->
