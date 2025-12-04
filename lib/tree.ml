@@ -43,9 +43,14 @@ type tree = {
 let empty = { nodes = []; next_id = 1 }
 
 let add t lexeme =
-  let id = t.next_id in
-  let node = Leaf { pair = lexeme; id } in
-  ({ nodes = t.nodes @ [ node ]; next_id = id + 1 }, id)
+  if t.nodes = [] then
+    let id = 1 in
+    let node = Leaf { pair = lexeme; id } in
+    ({ nodes = t.nodes @ [ node ]; next_id = id + 1 }, id)
+  else
+    let id = t.next_id in
+    let node = Leaf { pair = lexeme; id } in
+    ({ nodes = t.nodes @ [ node ]; next_id = id + 1 }, id)
 
 let rec get t id =
   let rec find_in_node node target_id =
@@ -55,10 +60,10 @@ let rec get t id =
     | NodeOne { t; id = nid; _ } when nid = target_id -> Some node
     | NodeOne { t; _ } -> find_in_node t target_id
     | NodeTwo { t1; t2; id = nid; _ } when nid = target_id -> Some node
-    | NodeTwo { t1; t2; _ } ->
-        (match find_in_node t1 target_id with
-         | Some n -> Some n
-         | None -> find_in_node t2 target_id)
+    | NodeTwo { t1; t2; _ } -> (
+        match find_in_node t1 target_id with
+        | Some n -> Some n
+        | None -> find_in_node t2 target_id)
   in
   match List.find_map (fun node -> find_in_node node id) t.nodes with
   | Some n -> n
@@ -68,8 +73,7 @@ let remove t removal_id =
   let rec claimed_ids node =
     match node with
     | NodeOne { t; id; _ } -> id :: claimed_ids t
-    | NodeTwo { t1; t2; id; _ } ->
-        id :: (claimed_ids t1 @ claimed_ids t2)
+    | NodeTwo { t1; t2; id; _ } -> id :: (claimed_ids t1 @ claimed_ids t2)
     | Leaf { id; _ } -> [ id ]
   in
   let start_claim node =

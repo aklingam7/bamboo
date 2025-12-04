@@ -38,6 +38,20 @@ let sample_syntax =
 
 let tree_tests =
   [
+    ( "adding leaf nodes, removing both, and adding another one" >:: fun _ ->
+      if
+        validate_lexeme "N" "boy" sample_syntax (Some sample_dict)
+        && validate_lexeme "V" "walks" sample_syntax (Some sample_dict)
+      then
+        let t, id1 = add empty (create_lexeme "N" "boy") in
+        let t, id2 = add t (create_lexeme "V" "walks") in
+        let t = remove t id1 in
+        let t = remove t id2 in
+        let t, id3 = add t (create_lexeme "N" "boy") in
+        assert_equal "[Category: N | Word: boy] (id: 1)\n"
+          (to_string_list (to_list t))
+          ~printer:string_of_string
+      else assert_failure "Validation failed" );
     ( "adding leaf node to empty list" >:: fun _ ->
       if validate_lexeme "N" "boy" sample_syntax (Some sample_dict) then
         let t, id1 = add empty (create_lexeme "N" "boy") in
@@ -64,7 +78,11 @@ let tree_tests =
       let t, id1 = add empty (create_lexeme "N" "boy") in
       let t, id2 = add t (create_lexeme "V" "walks") in
       let node1 = get t id1 in
-      if validate_constituent (NodeOne { t = node1; category = "NP"; id = 0 }) "NP" sample_syntax then
+      if
+        validate_constituent
+          (NodeOne { t = node1; category = "NP"; id = 0 })
+          "NP" sample_syntax
+      then
         let t, id3 = connect1 t node1 "NP" in
         assert_equal
           "[NP[Category: N | Word: boy] (id: 1)] (id: 3)\n\

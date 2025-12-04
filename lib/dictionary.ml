@@ -12,7 +12,6 @@ lexeme invariant.
 *)
 
 type lexeme = string * string
-
 type dictionary = lexeme list
 
 let create_lexeme lexical_category word : lexeme = (lexical_category, word)
@@ -46,3 +45,10 @@ let mem lex (dict : dictionary) : bool =
   checker lex dict
 
 let len_dictionary dictionary = List.length dictionary
+
+(**let rec lookup_dictionary word dict = match dict with | [] -> [] | h :: t ->
+   if snd h = word then fst h :: lookup_dictionary word t else lookup_dictionary
+   word t
+
+   let rec has_word word dict = match dict with | [] -> false | h :: t -> if snd
+   h = word then true else has_word word t*)
