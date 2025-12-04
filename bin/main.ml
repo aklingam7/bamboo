@@ -108,23 +108,20 @@ let print_welcome () =
   let _ = print_review () in
   ()
 
+let next_command_helper tree extra =
+  let tree_str = Tree_printer.to_fancy_string tree in
+  let () = if tree_str <> "" then print_endline ("\n\n" ^ tree_str ^ "\n") in
+  let () = if extra <> "" then print_endline ("\n\n" ^ extra ^ "\n") in
+  let () = print_commands () in
+  let () = print_string "\n> " in
+  flush stdout
+
 let next_command_prompt tree review_opt extra =
   let () = clear_screen () in
   if review_opt = "review" then
     let _ = print_review () in
-    let tree_str = Tree_printer.to_fancy_string tree in
-    let () = if tree_str <> "" then print_endline ("\n\n" ^ tree_str ^ "\n") in
-    let () = if extra <> "" then print_endline ("\n\n" ^ extra ^ "\n") in
-    let () = print_commands () in
-    let () = print_string "\n> " in
-    flush stdout
-  else
-    let tree_str = Tree_printer.to_fancy_string tree in
-    let () = if tree_str <> "" then print_endline (tree_str ^ "\n") in
-    let () = if extra <> "" then print_endline (extra ^ "\n") in
-    let () = print_commands () in
-    let () = print_string "\n> " in
-    flush stdout
+    next_command_helper tree extra
+  else next_command_helper tree extra
 
 let usage_msg =
   "Correct usage: dune exec bin/main.exe -s <syntax-file> [-d <dict-file>]"
