@@ -61,3 +61,6 @@ val connect1 : tree -> tree_node -> string -> tree * int
 
 val to_list : tree -> tree_node list
 (** [to_list t] is a list of all top-level (orphan) tree nodes in [t]. *)
+
+val string_of_tree_node : tree_node -> string
+(** [string_of_tree_node str] is a string representation of a tree node. *)

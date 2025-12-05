@@ -2,8 +2,8 @@ open Syntax
 open Tree
 open Dictionary
 
-(** Raised when validation fails *)
 exception ValidationError of string
+(** Raised when validation fails *)
 
 val validate_lexeme : string -> string -> syntax -> dictionary option -> bool
 (** [validate_lexeme category word syn dict_opt] returns true if a lexeme with

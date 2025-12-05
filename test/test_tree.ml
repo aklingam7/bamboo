@@ -40,18 +40,20 @@ let assert_trees_equal (t1 : tree) (t2 : tree) =
   let rec assert_tree_nodes_equal n1 n2 =
     match (n1, n2) with
     | Leaf { pair = pair1; id = id1 }, Leaf { pair = pair2; id = id2 } ->
-        assert_equal (get_lexeme_category pair1) (get_lexeme_category pair2);
-        assert_equal (get_lexeme_word pair1) (get_lexeme_word pair2);
-        assert_equal id1 id2
+        assert_equal (get_lexeme_category pair1) (get_lexeme_category pair2)
+          ~printer:(fun s -> s);
+        assert_equal (get_lexeme_word pair1) (get_lexeme_word pair2)
+          ~printer:(fun s -> s);
+        assert_equal id1 id2 ~printer:(fun i -> string_of_int i)
     | ( NodeOne { t = t1; category = category1; id = id1 },
         NodeOne { t = t2; category = category2; id = id2 } ) ->
-        assert_equal category1 category2;
-        assert_equal id1 id2;
+        assert_equal category1 category2 ~printer:(fun s -> s);
+        assert_equal id1 id2 ~printer:(fun i -> string_of_int i);
         assert_tree_nodes_equal t1 t2
     | ( NodeTwo { t1 = t11; t2 = t12; category = category1; id = id1 },
         NodeTwo { t1 = t21; t2 = t22; category = category2; id = id2 } ) ->
-        assert_equal category1 category2;
-        assert_equal id1 id2;
+        assert_equal category1 category2 ~printer:(fun s -> s);
+        assert_equal id1 id2 ~printer:(fun i -> string_of_int i);
         assert_tree_nodes_equal t11 t21;
         assert_tree_nodes_equal t12 t22
     | _ -> assert_failure "Different node types"
@@ -78,6 +80,7 @@ let tree_tests =
       if validate_lexeme "N" "boy" sample_syntax (Some sample_dict) then
         let t, id1 = add empty (create_lexeme "N" "boy") in
         assert_equal "[Category: N | Word: boy] (1)\n" (to_string t)
+          ~printer:string_of_string
       else assert_failure "Validation failed" );
     ( "adding leaf node to non-empty list" >:: fun _ ->
       if
@@ -163,14 +166,18 @@ let tree_tests =
       let lexeme = create_lexeme "D" "0" in
       let t, id1 = add empty lexeme in
       let node1 = get t id1 in
-      assert_equal (Leaf { pair = lexeme; id = 1 }) node1 );
+      assert_equal
+        (Leaf { pair = lexeme; id = 1 })
+        node1 ~printer:string_of_tree_node );
     ( "testing get for a nested node" >:: fun _ ->
       let lexeme = create_lexeme "D" "0" in
       let t, id1 = add empty lexeme in
       let node1 = get t id1 in
       let t, _ = connect1 t node1 "NP" in
       let node1 = get t id1 in
-      assert_equal (Leaf { pair = lexeme; id = 1 }) node1 );
+      assert_equal
+        (Leaf { pair = lexeme; id = 1 })
+        node1 ~printer:string_of_tree_node );
     ( "testing get for a deeply nested node" >:: fun _ ->
       let t, id1 = add empty (create_lexeme "N" "food") in
       let node1 = get t id1 in
@@ -184,7 +191,9 @@ let tree_tests =
       let t, id5 = connect2 t node2 node4 "NP" in
       let node5 = get t id5 in
       let t, id6 = connect2 t node3 node5 "DP" in
-      assert_equal (Leaf { pair = lexeme; id = 2 }) (get t id2) );
+      assert_equal
+        (Leaf { pair = lexeme; id = 2 })
+        (get t id2) ~printer:string_of_tree_node );
     ( "testing connect1 for a leaf node" >:: fun _ ->
       let t, id1 = add empty (create_lexeme "N" "boy") in
       let t, id2 = add t (create_lexeme "V" "walks") in
@@ -240,4 +249,26 @@ let tree_tests =
       let t, id3 = connect1 t node2 "NP" in
       assert_equal "[NP[N'[Category: N | Word: boy] (1)] (2)] (3)\n"
         (to_string t) ~printer:string_of_string );
+    ( "testing string_of_tree_node (Leaf)" >:: fun _ ->
+      let lexeme = create_lexeme "N" "boy" in
+      assert_equal "(id 2 -> Category: N | Word: boy)"
+        (string_of_tree_node (Leaf { pair = lexeme; id = 2 }))
+        ~printer:string_of_string );
+    ( "testing string_of_tree_node (NodeOne)" >:: fun _ ->
+      let t, id = add empty (create_lexeme "N" "boy") in
+      let node = get t id in
+      assert_equal "(id 0 -> NP - (id 1 -> Category: N | Word: boy))"
+        (string_of_tree_node (NodeOne { t = node; category = "NP"; id = 0 }))
+        ~printer:string_of_string );
+    ( "testing string_of_tree_node (NodeTwo)" >:: fun _ ->
+      let t, id1 = add empty (create_lexeme "D" "the") in
+      let t, id2 = add t (create_lexeme "N" "boy") in
+      let node1 = get t id1 in
+      let node2 = get t id2 in
+      assert_equal
+        "(id 0 -> NP - 1((id 1 -> Category: D | Word: the) - 2(id 2 -> \
+         Category: N | Word: boy))"
+        (string_of_tree_node
+           (NodeTwo { t1 = node1; t2 = node2; category = "NP"; id = 0 }))
+        ~printer:string_of_string );
   ]

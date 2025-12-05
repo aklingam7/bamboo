@@ -28,7 +28,8 @@ let rec as_constituent node category =
                   child = get_lexeme_word pair;
                 };
           }
-      | NodeOne { category = child_cat; _ } | NodeTwo { category = child_cat; _ } ->
+      | NodeOne { category = child_cat; _ }
+      | NodeTwo { category = child_cat; _ } ->
           let c = as_constituent t child_cat in
           { category; children = C c })
   | NodeTwo { t1; t2; category = _; _ } -> (
@@ -66,7 +67,8 @@ let rec as_constituent node category =
           let c1 = as_constituent t1 cat1 in
           let c2 = as_constituent t2 cat2 in
           { category; children = CC (c1, c2) }
-      | Leaf _, Leaf _ -> failwith "RI violation: NodeTwo cannot have two Leafs")
+      | Leaf _, Leaf _ -> failwith "RI violation: NodeTwo cannot have two Leafs"
+      )
 
 let validate_lexeme category word syntax dict_opt =
   let syntax_valid = check_lexeme syntax { category; child = word } in

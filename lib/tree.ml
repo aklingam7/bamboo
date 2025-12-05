@@ -141,3 +141,14 @@ let connect1 t node category =
   ({ nodes = nodes'; next_id = new_id + 1 }, new_id)
 
 let to_list t = t.nodes
+
+let rec string_of_tree_node (tn : tree_node) =
+  match tn with
+  | Leaf { pair; id } ->
+      "(id " ^ string_of_int id ^ " -> " ^ string_of_lexeme pair ^ ")"
+  | NodeOne { t; category; id } ->
+      "(id " ^ string_of_int id ^ " -> " ^ category ^ " - "
+      ^ string_of_tree_node t ^ ")"
+  | NodeTwo { t1; t2; category; id } ->
+      "(id " ^ string_of_int id ^ " -> " ^ category ^ " - 1("
+      ^ string_of_tree_node t1 ^ " - 2" ^ string_of_tree_node t2 ^ ")"

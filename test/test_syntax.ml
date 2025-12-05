@@ -165,7 +165,7 @@ let syntax_tests =
       assert_raises MalformedSyntax (fun () -> build_syntax missing) );
     ( "testing accuracy of to_string" >:: fun _ ->
       assert_equal expected_unmodified_syntax_string (to_string sample_syntax)
-    );
+        ~printer:(fun s -> s) );
     ( "testing all three categories for modify_syntax" >:: fun _ ->
       let test_file = Filename.temp_file "syntax" ".txt" in
       let () =
