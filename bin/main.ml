@@ -138,25 +138,6 @@ let print_review () =
   in
   ()
 
-let print_welcome () =
-  let () =
-    ANSITerminal.print_string
-      [ ANSITerminal.green; ANSITerminal.on_black ]
-      "╔════════════════════════════════════════╗\n"
-  in
-  let () =
-    ANSITerminal.print_string
-      [ ANSITerminal.green; ANSITerminal.on_black ]
-      "║        Welcome to Bamboo!              ║\n"
-  in
-  let () =
-    ANSITerminal.print_string
-      [ ANSITerminal.green; ANSITerminal.on_black ]
-      "╚════════════════════════════════════════╝\n"
-  in
-  let _ = print_review () in
-  ()
-
 (** [repl_state] is the state of the REPL on executing the last typed in
     command. *)
 type repl_state =
@@ -164,7 +145,27 @@ type repl_state =
   | Warning
   | Error
 
-let next_command_prompt tree extra prev_type =
+let print_state str state =
+  match state with
+  | Ok ->
+      ANSITerminal.print_string
+        [ ANSITerminal.green; ANSITerminal.on_black ]
+        str
+  | Warning ->
+      ANSITerminal.print_string
+        [ ANSITerminal.yellow; ANSITerminal.on_black ]
+        str
+  | Error ->
+      ANSITerminal.print_string [ ANSITerminal.red; ANSITerminal.on_black ] str
+
+let print_welcome () =
+  let () = print_state "╔════════════════════════════════════════╗\n" Ok in
+  let () = print_state "║        Welcome to Bamboo!              ║\n" Ok in
+  let () = print_state "╚════════════════════════════════════════╝\n" Ok in
+  let _ = print_review () in
+  ()
+
+let next_command_prompt tree extra prev_state =
   let () = clear_screen () in
   let () =
     if !review_opt then
@@ -178,21 +179,7 @@ let next_command_prompt tree extra prev_type =
   in
   let () = if tree_str <> "" then print_endline ("\n\n" ^ tree_str ^ "\n") in
   let () =
-    if extra <> "" then
-      let print_fn =
-        match prev_type with
-        | Ok ->
-            ANSITerminal.print_string
-              [ ANSITerminal.green; ANSITerminal.on_black ]
-        | Warning ->
-            ANSITerminal.print_string
-              [ ANSITerminal.yellow; ANSITerminal.on_black ]
-        | Error ->
-            ANSITerminal.print_string
-              [ ANSITerminal.red; ANSITerminal.on_black ]
-      in
-
-      print_fn ("\n\n" ^ extra ^ "\n\n")
+    if extra <> "" then print_state ("\n\n" ^ extra ^ "\n\n") prev_state
   in
   let () = print_commands () in
   let () = print_string "\n> " in
@@ -219,11 +206,7 @@ let dictionary =
     (if !dict_file <> "" then
        try Some (Dictionary.build_dictionary (Csv.load !dict_file))
        with _ ->
-         let () =
-           ANSITerminal.print_string
-             [ ANSITerminal.red; ANSITerminal.on_black ]
-             "Error in loading dictionary\n"
-         in
+         let () = print_state "Error in loading dictionary\n" Error in
          exit 1
      else
        let () =
@@ -242,11 +225,7 @@ let syntax =
          let file = BatFile.with_file_in !syntax_file BatIO.read_all in
          Syntax.build_syntax file
        with _ ->
-         let () =
-           ANSITerminal.print_string
-             [ ANSITerminal.red; ANSITerminal.on_black ]
-             "Error in loading syntax\n"
-         in
+         let () = print_state "Error in loading syntax\n" Error in
          exit 1
      else
        let () =
@@ -269,10 +248,7 @@ let main_loop =
     let tree_str = Tree_printer.to_fancy_string !tree in
     if tree_str <> "" then print_endline (tree_str ^ "\n");
 
-    if !starting_info <> "" then
-      ANSITerminal.print_string
-        [ ANSITerminal.yellow; ANSITerminal.on_black ]
-        (!starting_info ^ "\n\n");
+    if !starting_info <> "" then print_state (!starting_info ^ "\n\n") Warning;
 
     print_commands ();
     print_string "\n> ";
@@ -287,9 +263,9 @@ let main_loop =
       | "quit" ->
           let () =
             print_endline "Goodbye! Thanks for using Bamboo!";
-            ANSITerminal.print_string
-              [ ANSITerminal.green; ANSITerminal.on_black ]
-              (* Art credit: https://emojicombos.com/bamboo-ascii-art *)
+            print_state
+              (* Art credit: https://emojicombos.com/bamboo-ascii-art |
+                 Accessed: 12/5/25 *)
               "⠀⠀⠀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⡀⠀⠀⠀⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀\n\
                ⠀⠀⠀⢹⣿⡇⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⠇⠀⠀⠀⢸⣿⣿⠀⠀⠀⠀⠀⠀⠀\n\
                ⠀⠀⠀⢸⣿⡇⠀⠀⠀⠀⠀⠀⠀⠈⣿⣿⠀⠀⠀⠀⢸⣿⣿⠀⣶⡿⠃⠀⠀⠀\n\
@@ -304,7 +280,8 @@ let main_loop =
                ⠀⠀⠀⢸⣿⡇⠀⠀⠀⠉⠀⠀⠀⢸⣿⣿⠃⠀⠀⠀⣾⣿⣷⠀⣿⠿⠋⠀⠀⠀\n\
                ⠀⠀⠀⢸⣿⡇⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⠀⠀⠀⠀⣤⣤⣤⠠⣤⣄⡀⠀⠀⠀\n\
                ⠀⠀⠀⣾⣿⡇⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⡇⠀⠀⠀⢸⣿⣏⠀⠈⠉⠉⠀⠀⠀\n\
-               ⠀⠀⠀⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠁⠀⠀⠀⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀\n";
+               ⠀⠀⠀⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠁⠀⠀⠀⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀\n"
+              Ok;
             exit := true
           in
           ()
