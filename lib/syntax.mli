@@ -1,10 +1,10 @@
 exception InvalidSyntax
 exception MalformedSyntax
 
-(** [syntax] represents a context-free grammar for X-bar theory, including
-    lexical categories (e.g., N, V, D), constituent categories (e.g., NP, VP, TP),
-    and production rules that define valid constituent structures. *)
 type syntax
+(** [syntax] represents a context-free grammar for X-bar theory, including
+    lexical categories (e.g., N, V, D), constituent categories (e.g., NP, VP,
+    TP), and production rules that define valid constituent structures. *)
 
 type lexical_node = {
   category : string;
@@ -59,3 +59,12 @@ val check_constituent : syntax -> constituent_node -> bool
     a valid constituent category (that is defined in [s]) and its children are
     both valid as per the rules in ruleset for the constituent category of [c]
     and valid constiuents or lexemes themselves. *)
+
+val to_string : syntax -> string
+(** [to_string s] converts the given syntax to a string of appropriate format *)
+
+val modify_syntax : string -> string -> syntax -> string option -> syntax
+(** [modify_syntax rule_category rule syntax file_opt] returns a syntax
+    containing all of the rules of the passed-in [syntax] as well as the passed
+    [rule] in the given [rule_category], and modifies the [file_opt] to contain
+    the new syntax if it is not None. *)

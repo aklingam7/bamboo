@@ -11,9 +11,9 @@ exception MalformedSyntax
     Representation invariant:
     - [lexical_categories] contains no duplicate entries
     - [constituent_categories] contains no duplicate entries
-    - [ruleset] may contain arbitrary category names (not necessarily present
-      in the category lists), as the interface specifies that extraneous
-      categories are accepted on purpose
+    - [ruleset] may contain arbitrary category names (not necessarily present in
+      the category lists), as the interface specifies that extraneous categories
+      are accepted on purpose
     - [ruleset] may contain duplicate rules *)
 
 type syntax = {
@@ -44,8 +44,11 @@ let validate_syntax (s : syntax) : unit =
   let duplicates lst =
     List.length (List.sort_uniq compare lst) <> List.length lst
   in
-  if duplicates s.lexical_categories || duplicates s.constituent_categories then
-    raise InvalidSyntax
+  if
+    duplicates s.lexical_categories
+    || duplicates s.constituent_categories
+    || duplicates s.ruleset
+  then raise InvalidSyntax
 
 let rule_regexp_pattern = {|\([^ ]+\) -> \([^ ]+\( [^ ]+\)?\)|}
 let rule_regexp = Str.regexp rule_regexp_pattern
@@ -69,12 +72,16 @@ let syntax_doc_regexp =
 let lexical_cats_group_number, constituent_cats_group_number = (1, 3)
 let rules_group_number = 5
 
-(** Converts newline-terminated entries to [string list] *)
+(** [entries str] converts newline-terminated entries to [string list]. Requires
+    there is at least one entry in [str]. *)
 let entries str =
   let rec remove_last = function
-    | [] -> []
     | [ _ ] -> []
     | h :: t -> h :: remove_last t
+    | _ -> ( [] [@coverage off])
+    (* The previous two cases block all cases which obey the precondition, so
+       this line being reached requires a precondition violation. Thus it is
+       ignored. *)
   in
   remove_last (String.split_on_char '\n' str)
 
@@ -87,8 +94,7 @@ let full_match r s =
 let build_syntax (sd : string) : syntax =
   (* Helper to parse rules *)
   let parse_rule rule =
-    let well_formed_rule = full_match rule_regexp rule in
-    if not well_formed_rule then raise MalformedSyntax;
+    let _ = full_match rule_regexp rule in
     ( Str.matched_group lhs_group_number rule,
       Str.matched_group rhs_group_number rule )
   in
@@ -136,3 +142,57 @@ let rec check_constituent (s : syntax) (c : constituent_node) : bool =
   | CC (c1, c2) ->
       List.mem (c1.category ^ " " ^ c2.category) subs
       && check_constituent s c1 && check_constituent s c2
+
+let to_string (s : syntax) =
+  "lexical categories:\n"
+  ^ String.concat "\n" s.lexical_categories
+  ^ "\nconstituent categories:\n"
+  ^ String.concat "\n" s.constituent_categories
+  ^ "\nrules:\n"
+  ^ String.concat "\n" (List.map (fun r -> fst r ^ " -> " ^ snd r) s.ruleset)
+  ^ "\n"
+
+let modify_syntax category rule syntax file_opt =
+  (* Reading the current syntax and turning each line into a list element *)
+  let syntax_lines = String.split_on_char '\n' (to_string syntax) in
+
+  (* The rule for where to add the new syntax item *)
+  let match_category line =
+    if
+      (line = "lexical categories:" && category = "lexical-categories")
+      || line = "constituent categories:"
+         && category = "constituent-categories"
+      || (line = "rules:" && category = "rules")
+    then true
+    else false
+  in
+
+  (* Inserting into the syntax line list *)
+  let rec insert_rule = function
+    | line :: file_t when match_category line -> line :: rule :: file_t
+    | line :: file_t -> line :: insert_rule file_t
+    | _ -> ( [] [@coverage off])
+    (* The previous two cases block all cases which obey the precondition, so
+       this line being reached requires a precondition violation. Thus it is
+       ignored. *)
+  in
+
+  (* Evaluating to find the new syntax rules *)
+  let new_syntax = insert_rule syntax_lines in
+  let new_syntax_text = String.concat "\n" new_syntax in
+
+  (* Modifying everything that needs to be modified *)
+  let syntax_text = new_syntax_text in
+  let new_syntax =
+    (* We need to rebuild syntax everytime to ensure that the new syntax is well
+       formed, which is known to be checked by build_syntax*)
+    build_syntax syntax_text
+  in
+  let () =
+    match file_opt with
+    | None -> ()
+    | Some path ->
+        Out_channel.with_open_text path (fun oc ->
+            Out_channel.output_string oc new_syntax_text)
+  in
+  new_syntax

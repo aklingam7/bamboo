@@ -181,18 +181,11 @@ let dictionary =
        let () = dictionary_exists := false in
        None)
 
-(* We need to store the text to make it easy to add new rules and build the
-   syntax file again *)
-let syntax_text =
-  (* A default syntax file *)
-  ref "lexical categories:\nconstituent categories:\nrules:\n"
-
 let syntax =
   ref
     (if !syntax_file <> "" then
        try
          let file = BatFile.with_file_in !syntax_file BatIO.read_all in
-         syntax_text := file;
          Syntax.build_syntax file
        with _ ->
          let () = print_endline "Error in loading syntax" in
@@ -202,56 +195,8 @@ let syntax =
          starting_info :=
            !starting_info ^ "\nSyntax not defined; running with empty syntax"
        in
-       Syntax.build_syntax !syntax_text)
-
-let modify_syntax category rule edit_file =
-  (* Reading the current syntax and turning each line into a list element *)
-  let syntax_lines =
-    !syntax_text |> String.split_on_char '\n' |> fun ls ->
-    match List.rev ls with
-    (* Prevents an extraneous newline from appearing *)
-    | "" :: rest ->
-        List.rev rest
-        (* A properly formatted syntax file is guaranteed to have only one
-           trailing new line *)
-    | _ -> ls
-  in
-
-  (* The rule for where to add the new syntax item *)
-  let match_category line =
-    if
-      (line = "lexical categories:" && category = "lexical-categories")
-      || line = "constituent categories:"
-         && category = "constituent-categories"
-      || (line = "rules:" && category = "rules")
-    then true
-    else false
-  in
-
-  (* Inserting into the syntax line list *)
-  let rec insert_rule = function
-    | line :: file_t when match_category line -> line :: rule :: file_t
-    | line :: file_t -> line :: insert_rule file_t
-    | [] -> [] (* Impossible: syntax file is guarenteed to be valid *)
-  in
-
-  (* Evaluating to find the new syntax rules *)
-  let new_syntax = insert_rule syntax_lines in
-  let new_syntax_text = String.concat "\n" new_syntax in
-
-  (* Modifying everything that needs to be modified *)
-  syntax_text := new_syntax_text ^ "\n";
-  syntax :=
-    (* We need to rebuild syntax everytime to ensure that the new syntax is well
-       formed, which is known to be checked by build_syntax*)
-    Syntax.build_syntax !syntax_text;
-
-  if edit_file then
-    (* File is only edited if one was provided in the first place *)
-    Out_channel.with_open_text !syntax_file (fun oc ->
-        Out_channel.output_string oc new_syntax_text;
-        Out_channel.output_char oc '\n')
-  else ()
+       Syntax.build_syntax
+         "lexical categories:\nconstituent categories:\nrules:\n")
 
 (* This logic has been abstracted out in case we need a more powerful command
    reader/parser later *)
@@ -280,7 +225,7 @@ let main_loop =
             exit := true
           in
           ()
-      | "syntax" -> next_command_prompt !tree !syntax_text
+      | "syntax" -> next_command_prompt !tree (Syntax.to_string !syntax)
       | "add" ->
           let lexical_category = List.nth command 1 in
           let word = List.nth command 2 in
@@ -360,17 +305,17 @@ let main_loop =
           let category = List.nth command 1 in
           let rule = List.nth command 2 in
 
-          let to_mod_file, message =
+          let file_opt, message =
             if !syntax_file = "" then
-              ( false,
+              ( None,
                 "No syntax file was provided. New syntax element was added to \
                  working syntax" )
             else
-              ( true,
+              ( Some !syntax_file,
                 "Added new syntax element to syntax and modified syntax file" )
           in
           try
-            modify_syntax category rule to_mod_file;
+            syntax := Syntax.modify_syntax category rule !syntax file_opt;
             next_command_prompt !tree message
           with _ ->
             next_command_prompt !tree
