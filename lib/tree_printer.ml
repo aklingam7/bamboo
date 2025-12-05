@@ -1,31 +1,39 @@
 open Tree
 open Dictionary
 
-let rec to_string tree =
-  match tree with
-  | Leaf { pair; id } ->
-      "[" ^ string_of_lexeme pair ^ "] (id: " ^ string_of_int id ^ ")"
-  | NodeOne { t; category; id } ->
-      "[" ^ category ^ to_string t ^ "] (id: " ^ string_of_int id ^ ")"
-  | NodeTwo { t1; t2; category; id } ->
-      "[" ^ category ^ to_string t1 ^ to_string t2 ^ "] (id: "
-      ^ string_of_int id ^ ")"
+let rec to_string (tree_workspace : tree) : string =
+  let rec tree_to_string (tree : tree_node) : string =
+    match tree with
+    | Leaf { pair; id } ->
+        "[" ^ string_of_lexeme pair ^ "] (" ^ string_of_int id ^ ")"
+    | NodeOne { t; category; id } ->
+        "[" ^ category ^ tree_to_string t ^ "] (" ^ string_of_int id ^ ")"
+    | NodeTwo { t1; t2; category; id } ->
+        "[" ^ category ^ tree_to_string t1 ^ tree_to_string t2 ^ "] ("
+        ^ string_of_int id ^ ")"
+  in
+  let nodes = to_list tree_workspace in
+  match nodes with
+  | [] -> ""
+  | node :: rest ->
+      List.fold_left (fun acc node -> acc ^ tree_to_string node ^ "\n") "" nodes
 
-(** Represents a formatted string with positioning information for tree rendering.
-    Used internally by fancy printing functions to calculate spacing and alignment.
-    - [rep]: The string representation with newlines and spacing
-    - [mid]: The midpoint position for vertical line alignment
-    - [width]: The total width of the string in characters *)
 type fancy_string = {
   rep : string;
   mid : int;
   width : int;
 }
+(** Represents a formatted string with positioning information for tree
+    rendering. Used internally by fancy printing functions to calculate spacing
+    and alignment.
+    - [rep]: The string representation with newlines and spacing
+    - [mid]: The midpoint position for vertical line alignment
+    - [width]: The total width of the string in characters *)
 
 let one_padding sub cur =
   let dif = cur - sub in
   let l_pad = abs dif / 2 in
-  let r_pad = if dif mod 2 = 1 then l_pad + 1 else l_pad in
+  let r_pad = if abs dif mod 2 = 1 then l_pad + 1 else l_pad in
   if dif > 0 then ((0, 0), (l_pad, r_pad)) else ((l_pad, r_pad), (0, 0))
 
 let add_single_padding cur (l_pad, r_pad) =
@@ -116,7 +124,7 @@ let rec to_fancy_string_helper (node : tree_node) : fancy_string =
       let top = add_single_padding top (fst padding) in
       let bottom = add_single_padding bottom (snd padding) in
       let width = String.length top in
-      let mid = width / 2 in
+      let mid = (width - 1) / 2 in
       let rep =
         top ^ "\n"
         ^ (let row = String.make width ' ' in
@@ -126,18 +134,18 @@ let rec to_fancy_string_helper (node : tree_node) : fancy_string =
       { rep; mid; width }
   | NodeOne { t; category; id } ->
       let sub = to_fancy_string_helper t in
-      let cur = "[" ^ category ^ "] (id: " ^ string_of_int id ^ ")" in
+      let cur = "[" ^ category ^ "] (" ^ string_of_int id ^ ")" in
       let padding = one_padding sub.width (String.length cur) in
       let sub = { sub with rep = add_multiple_padding sub.rep (snd padding) } in
       let cur = add_single_padding cur (fst padding) in
       let width = String.length cur in
-      let mid = width / 2 in
+      let mid = (width - 1) / 2 in
       let temp_rep = { rep = cur; mid; width } in
       { rep = one_branch sub temp_rep; mid; width }
   | NodeTwo { t1; t2; category; id } ->
       let sub1 = to_fancy_string_helper t1 in
       let sub2 = to_fancy_string_helper t2 in
-      let cur = "[" ^ category ^ "] (id: " ^ string_of_int id ^ ")" in
+      let cur = "[" ^ category ^ "] (" ^ string_of_int id ^ ")" in
       let subs = combine_subs sub1 sub2 in
       let padding = one_padding (snd subs) (String.length cur) in
       let sub1 =
@@ -148,18 +156,12 @@ let rec to_fancy_string_helper (node : tree_node) : fancy_string =
       in
       let cur = add_single_padding cur (fst padding) in
       let width = String.length cur in
-      let mid = width / 2 in
+      let mid = (width - 1) / 2 in
       let temp_rep = { rep = cur; mid; width } in
       { rep = two_branch sub1 sub2 (fst subs) temp_rep; mid; width }
 
 let rec to_fancy_string (t : tree) : string =
   match to_list t with
-  | [] -> ""
-  | [ node ] -> (to_fancy_string_helper node).rep
-  | nodes -> to_fancy_string_list nodes
-
-and to_fancy_string_list (nodes : tree_node list) : string =
-  match nodes with
   | [] -> ""
   | node :: rest ->
       let start = to_fancy_string_helper node in

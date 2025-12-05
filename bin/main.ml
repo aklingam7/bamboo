@@ -1,5 +1,8 @@
 open Bamboo
-open Bamboo.Validator
+
+let fancy_strings_enabled = ref true
+let review_opt = ref true
+let dictionary_exists = ref true
 
 let clear_screen () =
   let () = print_string "\027[2J" in
@@ -34,15 +37,25 @@ let print_commands () =
        the tree; can only remove top-level nodes (i.e., nodes with no parents)"
   in
   let () =
-    print_endline
-      "\texpand <lexical-category> <word> -> Expands the current dictionary \
-       with a word containing the described lexeme. Note: this also modifies \
-       the dictionary file passed in"
+    if !dictionary_exists then
+      print_endline
+        "\texpand <lexical-category> <word> -> Expands the current dictionary \
+         (including the file) with a word containing the described lexeme."
+    else ()
   in
   let () =
     print_endline
-      "\treview -> Provides the user with a description\n\
-      \  of how syntax trees work"
+      "\treview -> Provides the user with a description of how syntax trees \
+       work"
+  in
+  let () =
+    print_endline
+      "\ttoggle_fancy -> Toggle the display of trees between nested brackets \
+       and tree structures"
+  in
+  let () =
+    print_endline
+      "\treset_tree -> Resets the tree and ID numbers back to an empty tree"
   in
   ()
 
@@ -67,37 +80,36 @@ let print_review () =
   let () =
     print_endline
       ("Syntax trees represent the ways to visualize sentence structures. \n\
-       \  The top of a tree, the root, typically contains a TP, which \
-        represents the sentence as a whole. The rule, TP -> DP VP, indicates \
-        that a TP node branches into two nodes, a DP and VP. The visualization \
-        is shown below,\n\
+        The top of a tree, the root, typically contains a TP, which represents \
+        the sentence as a whole. The rule, TP -> DP VP, indicates that a TP \
+        node branches into two nodes, a DP and VP. The visualization is shown \
+        below:\n\n\
        \   TP\n\
        \  / \\\n\
-       \ DP VP.\n\n\
-        A DP represents a noun phrase with a determiner (i.e, \"the \", \" my \
-        \", \" his \", \" one \", \" four\n\
-       \      \" etc.), while a VP represents a verb phrase. For the sentence, \
-        \" The boy\n\
-       \      walks\", \n\
-        \the simple structure is shown below,\n" ^ ex_tree
-     ^ "\n\
-       \ It is important to note that we can not connect two lexical nodes \
+       \ DP VP\n\n\
+        A DP represents a noun phrase with a determiner (i.e, \"the\", \"my\", \
+        \"his\", \"one\", \"four\", etc.), while a VP represents a verb \
+        phrase. For the sentence:\n\n\
+       \ \t\"The boy walks.\" \n\n\
+        The simple structure is shown below:\n\n" ^ ex_tree
+     ^ "\n\n\
+        It is important to note that we can not connect two lexical nodes \
         together (i.e, N, V, D, P, etc.). For example, for a DP to be formed, \
         we must first form an NP first. We can not connect a D with an N as \
         those are both lexical nodes.\n\n\
         Right now, to connect nodes, use the rightmost id number as that \
         represents the id number of the topmost node of the subtree.\n\n\
         Here are the lexical node representations:\n\
-        N-Noun\n\
-        V-Verb\n\
-        D-Determiner\n\
-        P-Preposition (not originally given)\n\
-        Adj-Adjective\n\n\
+        N\t- Noun\n\
+        V\t- Verb\n\
+        D\t- Determiner\n\
+        P\t- Preposition (not originally given)\n\
+        Adj\t- Adjective\n\n\
         Here are some general nodes that are not originally given:\n\
-        PP-> P DP\n\
-        VP->V PP\n\
-        AdjP->Adj\n\
-        NP-> AdjP N")
+        PP\t-> P DP\n\
+        VP\t-> V PP\n\
+        AdjP\t-> Adj\n\
+        NP\t-> AdjP N\n\n")
   in
   ()
 
@@ -108,20 +120,23 @@ let print_welcome () =
   let _ = print_review () in
   ()
 
-let next_command_helper tree extra =
-  let tree_str = Tree_printer.to_fancy_string tree in
+let next_command_prompt tree extra =
+  let () = clear_screen () in
+  let () =
+    if !review_opt then
+      let () = review_opt := false in
+      print_review ()
+    else ()
+  in
+  let tree_str =
+    if !fancy_strings_enabled then Tree_printer.to_fancy_string tree
+    else Tree_printer.to_string tree
+  in
   let () = if tree_str <> "" then print_endline ("\n\n" ^ tree_str ^ "\n") in
   let () = if extra <> "" then print_endline ("\n\n" ^ extra ^ "\n") in
   let () = print_commands () in
   let () = print_string "\n> " in
   flush stdout
-
-let next_command_prompt tree review_opt extra =
-  let () = clear_screen () in
-  if review_opt = "review" then
-    let _ = print_review () in
-    next_command_helper tree extra
-  else next_command_helper tree extra
 
 let usage_msg =
   "Correct usage: dune exec bin/main.exe -s <syntax-file> [-d <dict-file>]"
@@ -153,6 +168,7 @@ let dictionary =
             Dictionary not defined; running with dictionary suppressed (all \
             words permitted without checking)"
        in
+       let () = dictionary_exists := false in
        None)
 
 let syntax =
@@ -193,18 +209,19 @@ let main_loop =
           ()
       | "syntax" ->
           if !syntax_file <> "" then
-            next_command_prompt !tree ""
+            next_command_prompt !tree
               (BatFile.with_file_in !syntax_file BatIO.read_all)
-          else next_command_prompt !tree "" "Syntax is empty"
+          else next_command_prompt !tree "Syntax is empty"
       | "add" ->
           let lexical_category = List.nth command 1 in
           let word = List.nth command 2 in
-          if validate_lexeme lexical_category word syntax !dictionary then (
+          if Validator.validate_lexeme lexical_category word syntax !dictionary
+          then (
             let lexeme = Dictionary.create_lexeme lexical_category word in
             let new_tree, _ = Tree.add !tree lexeme in
             tree := new_tree;
-            next_command_prompt !tree "" "Added node")
-          else next_command_prompt !tree "" "Error: Invalid lexeme"
+            next_command_prompt !tree "Added node")
+          else next_command_prompt !tree "Error: Invalid lexeme"
       | "connect" ->
           let constituent_category = List.nth command 1 in
           let node1 = Tree.get !tree (int_of_string (List.nth command 2)) in
@@ -213,13 +230,16 @@ let main_loop =
               Tree.NodeOne
                 { t = node1; category = constituent_category; id = 0 }
             in
-            if validate_constituent test_node constituent_category syntax then (
+            if
+              Validator.validate_constituent test_node constituent_category
+                syntax
+            then (
               let new_tree, _ =
                 Tree.connect1 !tree node1 constituent_category
               in
               tree := new_tree;
-              next_command_prompt !tree "" "Added connecting node")
-            else next_command_prompt !tree "" "Error: Invalid constituent"
+              next_command_prompt !tree "Added connecting node")
+            else next_command_prompt !tree "Error: Invalid constituent"
           else
             let node2 = Tree.get !tree (int_of_string (List.nth command 3)) in
             let test_node =
@@ -231,40 +251,62 @@ let main_loop =
                   id = 0;
                 }
             in
-            if validate_constituent test_node constituent_category syntax then (
+            if
+              Validator.validate_constituent test_node constituent_category
+                syntax
+            then (
               let new_tree, _ =
                 Tree.connect2 !tree node1 node2 constituent_category
               in
               tree := new_tree;
-              next_command_prompt !tree "" "Added connecting node")
-            else next_command_prompt !tree "" "Error: Invalid constituent"
+              next_command_prompt !tree "Added connecting node")
+            else next_command_prompt !tree "Error: Invalid constituent"
       | "remove" ->
           let node = List.nth command 1 in
           let new_tree = Tree.remove !tree (int_of_string node) in
           tree := new_tree;
-          next_command_prompt !tree "" "Removed node"
+          next_command_prompt !tree "Removed node"
       | "expand" ->
-          let lexical_category = List.nth command 1 in
-          let word = List.nth command 2 in
+          if !dictionary_exists then (
+            let lexical_category = List.nth command 1 in
+            let word = List.nth command 2 in
 
-          (* Adds to the abstract dictionary representation *)
-          let lexeme = Dictionary.create_lexeme lexical_category word in
-          (dictionary :=
-             match !dictionary with
-             | None -> None
-             | Some dict -> Some (Dictionary.augment_dictionary lexeme dict));
+            (* Adds to the abstract dictionary representation *)
+            let lexeme = Dictionary.create_lexeme lexical_category word in
+            (dictionary :=
+               match !dictionary with
+               | None -> None
+               | Some dict -> Some (Dictionary.augment_dictionary lexeme dict));
 
-          (* Adds to the physical dictionary file user passed in *)
-          Csv.save !dict_file ([ lexical_category; word ] :: Csv.load !dict_file);
+            (* Adds to the physical dictionary file user passed in *)
+            Csv.save !dict_file
+              ([ lexical_category; word ] :: Csv.load !dict_file);
 
-          next_command_prompt !tree "" "Added word to dictionary"
-      | "review" -> next_command_prompt !tree "review" "Review displayed"
-      | _ -> next_command_prompt !tree "" "Unknown command"
+            next_command_prompt !tree "Added word to dictionary")
+          else
+            next_command_prompt !tree
+              "This command is disabled when the dictionary file is not passed \
+               as a program argument."
+      | "toggle_fancy" ->
+          let () = fancy_strings_enabled := not !fancy_strings_enabled in
+          next_command_prompt !tree "Toggled tree printing type"
+      | "reset_tree" ->
+          let () = tree := Tree.empty in
+          next_command_prompt !tree "Reset tree"
+      | "review" ->
+          let () = review_opt := true in
+          next_command_prompt !tree "Review displayed"
+      | _ -> next_command_prompt !tree "Unknown command"
     with
-    | Tree.Wrong -> next_command_prompt !tree "" "Error: Invalid tree operation"
-    | Failure msg -> next_command_prompt !tree "" ("Error: " ^ msg)
+    | Tree.NonexistentNodeID id ->
+        next_command_prompt !tree
+          ("Error: Node with ID " ^ string_of_int id ^ " does not exist")
+    | Tree.NonTopLevelNodeID id ->
+        next_command_prompt !tree
+          ("Error: Node with ID " ^ string_of_int id
+         ^ " does not exist or is not a top-level node")
+    | Failure msg -> next_command_prompt !tree ("Error: " ^ msg)
     | Invalid_argument msg ->
-        next_command_prompt !tree "" ("Invalid argument: " ^ msg)
-    | _ ->
-        next_command_prompt !tree "" "Unknown error occurred. Please try again."
+        next_command_prompt !tree ("Invalid argument: " ^ msg)
+    | _ -> next_command_prompt !tree "Unknown error occurred. Please try again."
   done

@@ -1,6 +1,7 @@
 open Dictionary
 
-exception Wrong
+exception NonexistentNodeID of int
+exception NonTopLevelNodeID of int
 
 (**Abstraction function: [Leaf {pair = (a,b); id = x}] represents a node
    containing a lexeme with lexical category [a] and word [b], with an
@@ -67,7 +68,7 @@ let rec get t id =
   in
   match List.find_map (fun node -> find_in_node node id) t.nodes with
   | Some n -> n
-  | None -> raise Wrong
+  | None -> raise (NonexistentNodeID id)
 
 let remove t removal_id =
   let rec claimed_ids node =
@@ -90,7 +91,7 @@ let remove t removal_id =
   in
   let rec remove_from_list prev lst =
     match lst with
-    | [] -> raise Wrong
+    | [] -> raise (NonTopLevelNodeID removal_id)
     | h :: rest ->
         if node_id h = removal_id then
           let children =
@@ -119,9 +120,10 @@ let connect2 t n1 n2 category =
   let id1 = node_id n1 in
   let id2 = node_id n2 in
   let nodes' =
-    List.filter (fun n -> node_id n <> id1 && node_id n <> id2) t.nodes
+    List.map (fun n -> if node_id n = id1 then new_node else n) t.nodes
   in
-  ({ nodes = new_node :: nodes'; next_id = new_id + 1 }, new_id)
+  let nodes' = List.filter (fun n -> node_id n <> id2) nodes' in
+  ({ nodes = nodes'; next_id = new_id + 1 }, new_id)
 
 let connect1 t node category =
   let new_id = t.next_id in
@@ -133,7 +135,9 @@ let connect1 t node category =
     | Leaf { id; _ } -> id
   in
   let id = node_id node in
-  let nodes' = List.filter (fun n -> node_id n <> id) t.nodes in
-  ({ nodes = new_node :: nodes'; next_id = new_id + 1 }, new_id)
+  let nodes' =
+    List.map (fun n -> if node_id n = id then new_node else n) t.nodes
+  in
+  ({ nodes = nodes'; next_id = new_id + 1 }, new_id)
 
 let to_list t = t.nodes
