@@ -10,7 +10,7 @@ First, create an OPAM switch with OCaml 5.2.0 (recommended):
 
 Then, install the required dependencies:
 
-`opam install dune csv batteries ounit2 ppx_string ppx_inline_test bisect_ppx`
+`opam install dune csv ansiterminal batteries ounit2 ppx_string ppx_inline_test bisect_ppx`
 
 Then, run `dune build`. 
 

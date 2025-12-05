@@ -9,63 +9,78 @@ let clear_screen () =
   flush stdout
 
 let print_commands () =
-  let () = print_endline "Commands:" in
-  let () = print_endline "\tquit -> Exits the program" in
+  let print_header =
+    ANSITerminal.print_string
+      [ ANSITerminal.cyan; ANSITerminal.Bold; ANSITerminal.on_black ]
+  in
+  let print_text =
+    ANSITerminal.print_string
+      [ ANSITerminal.white; ANSITerminal.Bold; ANSITerminal.on_black ]
+  in
+
+  let () = print_header "Commands:\n" in
   let () =
-    print_endline
-      "\tsyntax -> Displays the full syntax, including lexical categories, \
-       constituent categories, and constituent formation rules"
+    print_header "\tquit -> ";
+    print_text "Exits the program\n"
   in
   let () =
-    print_endline
-      "\tadd <lexical-category> <word> -> Adds a node containing the described \
-       lexeme to the syntax tree"
+    print_header "\tsyntax -> ";
+    print_text
+      "Displays the full syntax, including lexical categories, constituent \
+       categories, and constituent formation rules\n"
   in
   let () =
-    print_endline
-      "\tconnect <constituent-category> <node> -> Adds a constituent node \
-       parenting the given node to the syntax tree"
+    print_header "\tadd <lexical-category> <word> -> ";
+    print_text
+      "Adds a node containing the described lexeme to the syntax tree\n"
   in
   let () =
-    print_endline
-      "\tconnect <constituent-category> <node1> <node2> -> Adds a constituent \
-       node parenting the two given nodes in order to the syntax tree"
+    print_header "\tconnect <constituent-category> <node> -> ";
+    print_text
+      "Adds a constituent node parenting the given node to the syntax tree\n"
   in
   let () =
-    print_endline
-      "\tremove <node> -> Removes the given node and all its connections from \
-       the tree; can only remove top-level nodes (i.e., nodes with no parents)"
+    print_header "\tconnect <constituent-category> <node1> <node2> -> ";
+    print_text
+      "Adds a constituent node parenting the two given nodes in order to the \
+       syntax tree\n"
   in
   let () =
-    if !dictionary_exists then
-      print_endline
-        "\texpand-dict <lexical-category> <word> -> Expands the current \
-         dictionary (including the file) with a word containing the described \
-         lexeme."
+    print_header "\tremove <node> -> ";
+    print_text
+      "Removes the given node and all its connections from the tree; can only \
+       remove top-level nodes (i.e., nodes with no parents)\n"
+  in
+  let () =
+    if !dictionary_exists then (
+      print_header "\texpand-dict <lexical-category> <word> -> ";
+      print_text
+        "Expands the current dictionary (including the file) with a word \
+         containing the described lexeme.\n")
     else ()
   in
   let () =
-    print_endline
-      "\texpand-syntax <rule-category> <rule> -> Expands the current syntax \
-       with (including the file) the rule passed in. The rules categories for \
-       this REPL are 'lexical-categories', 'constituent-categories', and \
-       'rules'. Please ensure complete compliance with the syntax format, \
-       including spacing. If you need to add a rule, please put quotes around \
-       the rule to ensure it is read properly."
+    print_header "\texpand-syntax <rule-category> <rule> -> ";
+    print_text
+      "Expands the current syntax with (including the file) the rule passed \
+       in. The rules categories for this REPL are 'lexical-categories', \
+       'constituent-categories', and 'rules'. Please ensure complete \
+       compliance with the syntax format, including spacing. If you need to \
+       add a rule, please put quotes around the rule to ensure it is read \
+       properly.\n"
   in
   let () =
-    print_endline
-      "\treview -> Provides the user with a description of how syntax trees \
-       work"
+    print_header "\treview -> ";
+    print_text "Provides the user with a description of how syntax trees work\n"
   in
   let () =
-    print_endline
-      "\ttoggle_fancy -> Toggle the display of trees between nested brackets \
-       and tree structures"
+    print_header "\ttoggle_fancy -> ";
+    print_text
+      "Toggle the display of trees between nested brackets and tree structures\n"
   in
   let () =
-    print_endline
-      "\treset_tree -> Resets the tree and ID numbers back to an empty tree"
+    print_header "\treset_tree -> ";
+    print_text "Resets the tree and ID numbers back to an empty tree\n"
   in
   ()
 
@@ -124,13 +139,32 @@ let print_review () =
   ()
 
 let print_welcome () =
-  let () = print_endline "╔════════════════════════════════════════╗" in
-  let () = print_endline "║        Welcome to Bamboo!              ║" in
-  let () = print_endline "╚════════════════════════════════════════╝" in
+  let () =
+    ANSITerminal.print_string
+      [ ANSITerminal.green; ANSITerminal.on_black ]
+      "╔════════════════════════════════════════╗\n"
+  in
+  let () =
+    ANSITerminal.print_string
+      [ ANSITerminal.green; ANSITerminal.on_black ]
+      "║        Welcome to Bamboo!              ║\n"
+  in
+  let () =
+    ANSITerminal.print_string
+      [ ANSITerminal.green; ANSITerminal.on_black ]
+      "╚════════════════════════════════════════╝\n"
+  in
   let _ = print_review () in
   ()
 
-let next_command_prompt tree extra =
+(** [repl_state] is the state of the REPL on executing the last typed in
+    command. *)
+type repl_state =
+  | Ok
+  | Warning
+  | Error
+
+let next_command_prompt tree extra prev_type =
   let () = clear_screen () in
   let () =
     if !review_opt then
@@ -143,7 +177,23 @@ let next_command_prompt tree extra =
     else Tree_printer.to_string tree
   in
   let () = if tree_str <> "" then print_endline ("\n\n" ^ tree_str ^ "\n") in
-  let () = if extra <> "" then print_endline ("\n\n" ^ extra ^ "\n") in
+  let () =
+    if extra <> "" then
+      let print_fn =
+        match prev_type with
+        | Ok ->
+            ANSITerminal.print_string
+              [ ANSITerminal.green; ANSITerminal.on_black ]
+        | Warning ->
+            ANSITerminal.print_string
+              [ ANSITerminal.yellow; ANSITerminal.on_black ]
+        | Error ->
+            ANSITerminal.print_string
+              [ ANSITerminal.red; ANSITerminal.on_black ]
+      in
+
+      print_fn ("\n\n" ^ extra ^ "\n\n")
+  in
   let () = print_commands () in
   let () = print_string "\n> " in
   flush stdout
@@ -169,7 +219,11 @@ let dictionary =
     (if !dict_file <> "" then
        try Some (Dictionary.build_dictionary (Csv.load !dict_file))
        with _ ->
-         let () = print_endline "Error in loading dictionary" in
+         let () =
+           ANSITerminal.print_string
+             [ ANSITerminal.red; ANSITerminal.on_black ]
+             "Error in loading dictionary\n"
+         in
          exit 1
      else
        let () =
@@ -188,7 +242,11 @@ let syntax =
          let file = BatFile.with_file_in !syntax_file BatIO.read_all in
          Syntax.build_syntax file
        with _ ->
-         let () = print_endline "Error in loading syntax" in
+         let () =
+           ANSITerminal.print_string
+             [ ANSITerminal.red; ANSITerminal.on_black ]
+             "Error in loading syntax\n"
+         in
          exit 1
      else
        let () =
@@ -206,14 +264,21 @@ let main_loop =
   let tree = ref Tree.empty in
   let () = clear_screen () in
   let () = print_welcome () in
+
   let () =
     let tree_str = Tree_printer.to_fancy_string !tree in
     if tree_str <> "" then print_endline (tree_str ^ "\n");
-    if !starting_info <> "" then print_endline (!starting_info ^ "\n");
+
+    if !starting_info <> "" then
+      ANSITerminal.print_string
+        [ ANSITerminal.yellow; ANSITerminal.on_black ]
+        (!starting_info ^ "\n\n");
+
     print_commands ();
     print_string "\n> ";
     flush stdout
   in
+
   let exit = ref false in
   while not !exit do
     let command = read_command () in
@@ -221,21 +286,40 @@ let main_loop =
       match List.hd command with
       | "quit" ->
           let () =
-            print_endline "Goodbye!";
+            print_endline "Goodbye! Thanks for using Bamboo!";
+            ANSITerminal.print_string
+              [ ANSITerminal.green; ANSITerminal.on_black ]
+              (* Art credit: https://emojicombos.com/bamboo-ascii-art *)
+              "⠀⠀⠀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⡀⠀⠀⠀⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀\n\
+               ⠀⠀⠀⢹⣿⡇⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⠇⠀⠀⠀⢸⣿⣿⠀⠀⠀⠀⠀⠀⠀\n\
+               ⠀⠀⠀⢸⣿⡇⠀⠀⠀⠀⠀⠀⠀⠈⣿⣿⠀⠀⠀⠀⢸⣿⣿⠀⣶⡿⠃⠀⠀⠀\n\
+               ⠀⠀⠀⢸⣿⡇⠀⠀⠀⠀⠰⣄⠀⠀⣿⣿⠀⠀⠀⠀⠚⠛⠛⠀⣤⣶⣦⣤⡄⠀\n\
+               ⠀⠀⠀⠛⠛⠃⠀⠀⠀⠀⠀⠹⠗⢀⣿⣿⡀⠀⠀⠀⢹⣿⣿⠀⣈⡉⠉⠀⠀⠀\n\
+               ⠀⠀⠀⢹⣿⡇⠀⠀⠉⠻⠿⣿⡆⠘⣛⣛⠃⠀⠀⠀⢸⣿⡏⠀⠻⢷⠀⠀⠀⠀\n\
+               ⠀⠀⠀⢸⣿⡇⠀⠀⣀⠀⠀⠀⠀⢸⣿⣿⡇⠀⠀⠀⢸⣿⡇⠀⠀⠀⠀⠀⠀⠀\n\
+               ⠀⠀⠀⢸⣿⡇⢠⣾⠏⠀⠀⠀⠀⠘⣿⣿⠀⠀⠀⠀⢸⣿⣷⠀⠀⠀⠀⠀⠀⠀\n\
+               ⠀⠀⠀⠺⠿⠇⠈⣁⣀⠀⠀⠀⠀⠀⣿⣿⠀⠀⠀⠀⣉⣉⣉⠀⠀⠀⠀⠀⠀⠀\n\
+               ⠀⠀⠀⢶⣶⡆⢈⡛⠛⠿⠦⠀⠀⢸⣿⣿⡀⠀⠀⠀⢿⣿⡿⠀⠀⠀⠀⠀⠀⠀\n\
+               ⠀⠀⠀⢸⣿⡇⠘⠿⣷⡀⠀⠀⠀⠘⠛⠛⠃⠀⠀⠀⢸⣿⡇⠀⠀⣀⣤⡄⠀⠀\n\
+               ⠀⠀⠀⢸⣿⡇⠀⠀⠀⠉⠀⠀⠀⢸⣿⣿⠃⠀⠀⠀⣾⣿⣷⠀⣿⠿⠋⠀⠀⠀\n\
+               ⠀⠀⠀⢸⣿⡇⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⠀⠀⠀⠀⣤⣤⣤⠠⣤⣄⡀⠀⠀⠀\n\
+               ⠀⠀⠀⣾⣿⡇⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⡇⠀⠀⠀⢸⣿⣏⠀⠈⠉⠉⠀⠀⠀\n\
+               ⠀⠀⠀⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠁⠀⠀⠀⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀\n";
             exit := true
           in
           ()
-      | "syntax" -> next_command_prompt !tree (Syntax.to_string !syntax)
+      | "syntax" -> next_command_prompt !tree (Syntax.to_string !syntax) Ok
       | "add" ->
           let lexical_category = List.nth command 1 in
           let word = List.nth command 2 in
           if Validator.validate_lexeme lexical_category word !syntax !dictionary
-          then (
-            let lexeme = Dictionary.create_lexeme lexical_category word in
-            let new_tree, _ = Tree.add !tree lexeme in
-            tree := new_tree;
-            next_command_prompt !tree "Added node")
-          else next_command_prompt !tree "Error: Invalid lexeme"
+          then
+            (let lexeme = Dictionary.create_lexeme lexical_category word in
+             let new_tree, _ = Tree.add !tree lexeme in
+             tree := new_tree;
+             next_command_prompt !tree "Added node")
+              Ok
+          else next_command_prompt !tree "Error: Invalid lexeme" Error
       | "connect" ->
           let constituent_category = List.nth command 1 in
           let node1 = Tree.get !tree (int_of_string (List.nth command 2)) in
@@ -247,13 +331,14 @@ let main_loop =
             if
               Validator.validate_constituent test_node constituent_category
                 !syntax
-            then (
-              let new_tree, _ =
-                Tree.connect1 !tree node1 constituent_category
-              in
-              tree := new_tree;
-              next_command_prompt !tree "Added connecting node")
-            else next_command_prompt !tree "Error: Invalid constituent"
+            then
+              (let new_tree, _ =
+                 Tree.connect1 !tree node1 constituent_category
+               in
+               tree := new_tree;
+               next_command_prompt !tree "Added connecting node")
+                Ok
+            else next_command_prompt !tree "Error: Invalid constituent" Error
           else
             let node2 = Tree.get !tree (int_of_string (List.nth command 3)) in
             let test_node =
@@ -268,39 +353,42 @@ let main_loop =
             if
               Validator.validate_constituent test_node constituent_category
                 !syntax
-            then (
-              let new_tree, _ =
-                Tree.connect2 !tree node1 node2 constituent_category
-              in
-              tree := new_tree;
-              next_command_prompt !tree "Added connecting node")
-            else next_command_prompt !tree "Error: Invalid constituent"
+            then
+              (let new_tree, _ =
+                 Tree.connect2 !tree node1 node2 constituent_category
+               in
+               tree := new_tree;
+               next_command_prompt !tree "Added connecting node")
+                Ok
+            else next_command_prompt !tree "Error: Invalid constituent" Error
       | "remove" ->
           let node = List.nth command 1 in
           let new_tree = Tree.remove !tree (int_of_string node) in
           tree := new_tree;
-          next_command_prompt !tree "Removed node"
+          next_command_prompt !tree "Removed node" Ok
       | "expand-dict" ->
-          if !dictionary_exists then (
-            let lexical_category = List.nth command 1 in
-            let word = List.nth command 2 in
+          if !dictionary_exists then
+            (let lexical_category = List.nth command 1 in
+             let word = List.nth command 2 in
 
-            (* Adds to the abstract dictionary representation *)
-            let lexeme = Dictionary.create_lexeme lexical_category word in
-            (dictionary :=
-               match !dictionary with
-               | None -> None
-               | Some dict -> Some (Dictionary.augment_dictionary lexeme dict));
+             (* Adds to the abstract dictionary representation *)
+             let lexeme = Dictionary.create_lexeme lexical_category word in
+             (dictionary :=
+                match !dictionary with
+                | None -> None
+                | Some dict -> Some (Dictionary.augment_dictionary lexeme dict));
 
-            (* Adds to the physical dictionary file user passed in *)
-            Csv.save !dict_file
-              ([ lexical_category; word ] :: Csv.load !dict_file);
+             (* Adds to the physical dictionary file user passed in *)
+             Csv.save !dict_file
+               ([ lexical_category; word ] :: Csv.load !dict_file);
 
-            next_command_prompt !tree "Added word to dictionary")
+             next_command_prompt !tree "Added word to dictionary")
+              Ok
           else
             next_command_prompt !tree
               "This command is disabled when the dictionary file is not passed \
                as a program argument."
+              Warning
       | "expand-syntax" -> (
           let category = List.nth command 1 in
           let rule = List.nth command 2 in
@@ -316,31 +404,36 @@ let main_loop =
           in
           try
             syntax := Syntax.modify_syntax category rule !syntax file_opt;
-            next_command_prompt !tree message
+            next_command_prompt !tree message Ok
           with _ ->
-            next_command_prompt !tree
-              "There was an error in the command given. Please ensure that the \
-               format given matches the syntax specification exactly")
+            (next_command_prompt !tree
+               "Error: The format of the command given does not match the \
+                syntax specification exactly")
+              Error)
       | "toggle_fancy" ->
           let () = fancy_strings_enabled := not !fancy_strings_enabled in
-          next_command_prompt !tree "Toggled tree printing type"
+          next_command_prompt !tree "Toggled tree printing type" Ok
       | "reset_tree" ->
           let () = tree := Tree.empty in
-          next_command_prompt !tree "Reset tree"
+          next_command_prompt !tree "Reset tree" Ok
       | "review" ->
           let () = review_opt := true in
-          next_command_prompt !tree "Review displayed"
-      | _ -> next_command_prompt !tree "Unknown command"
+          next_command_prompt !tree "Review displayed" Ok
+      | _ -> next_command_prompt !tree "Unknown command" Warning
     with
     | Tree.NonexistentNodeID id ->
         next_command_prompt !tree
           ("Error: Node with ID " ^ string_of_int id ^ " does not exist")
+          Error
     | Tree.NonTopLevelNodeID id ->
         next_command_prompt !tree
           ("Error: Node with ID " ^ string_of_int id
          ^ " does not exist or is not a top-level node")
-    | Failure msg -> next_command_prompt !tree ("Error: " ^ msg)
+          Error
+    | Failure msg -> next_command_prompt !tree ("Error: " ^ msg) Error
     | Invalid_argument msg ->
-        next_command_prompt !tree ("Invalid argument: " ^ msg)
-    | _ -> next_command_prompt !tree "Unknown error occurred. Please try again."
+        next_command_prompt !tree ("Invalid argument: " ^ msg) Warning
+    | _ ->
+        next_command_prompt !tree "Unknown error occurred. Please try again."
+          Error
   done
