@@ -39,9 +39,19 @@ let print_commands () =
   let () =
     if !dictionary_exists then
       print_endline
-        "\texpand <lexical-category> <word> -> Expands the current dictionary \
-         (including the file) with a word containing the described lexeme."
+        "\texpand-dict <lexical-category> <word> -> Expands the current \
+         dictionary (including the file) with a word containing the described \
+         lexeme."
     else ()
+  in
+  let () =
+    print_endline
+      "\texpand-syntax <rule-category> <rule> -> Expands the current syntax \
+       with (including the file) the rule passed in. The rules categories for \
+       this REPL are 'lexical-categories', 'constituent-categories', and \
+       'rules'. Please ensure complete compliance with the syntax format, \
+       including spacing. If you need to add a rule, please put quotes around \
+       the rule to ensure it is read properly."
   in
   let () =
     print_endline
@@ -171,18 +181,81 @@ let dictionary =
        let () = dictionary_exists := false in
        None)
 
+(* We need to store the text to make it easy to add new rules and build the
+   syntax file again *)
+let syntax_text =
+  (* A default syntax file *)
+  ref "lexical categories:\nconstituent categories:\nrules:\n"
+
 let syntax =
-  if !syntax_file <> "" then
-    try Syntax.build_syntax (BatFile.with_file_in !syntax_file BatIO.read_all)
-    with _ ->
-      let () = print_endline "Error in loading syntax" in
-      exit 1
-  else
-    let () =
-      starting_info :=
-        !starting_info ^ "\nSyntax not defined; running with empty syntax"
-    in
-    Syntax.build_syntax "lexical categories:\nconstituent categories:\nrules:\n"
+  ref
+    (if !syntax_file <> "" then
+       try
+         let file = BatFile.with_file_in !syntax_file BatIO.read_all in
+         syntax_text := file;
+         Syntax.build_syntax file
+       with _ ->
+         let () = print_endline "Error in loading syntax" in
+         exit 1
+     else
+       let () =
+         starting_info :=
+           !starting_info ^ "\nSyntax not defined; running with empty syntax"
+       in
+       Syntax.build_syntax !syntax_text)
+
+let modify_syntax category rule edit_file =
+  (* Reading the current syntax and turning each line into a list element *)
+  let syntax_lines =
+    !syntax_text |> String.split_on_char '\n' |> fun ls ->
+    match List.rev ls with
+    (* Prevents an extraneous newline from appearing *)
+    | "" :: rest ->
+        List.rev rest
+        (* A properly formatted syntax file is guaranteed to have only one
+           trailing new line *)
+    | _ -> ls
+  in
+
+  (* The rule for where to add the new syntax item *)
+  let match_category line =
+    if
+      (line = "lexical categories:" && category = "lexical-categories")
+      || line = "constituent categories:"
+         && category = "constituent-categories"
+      || (line = "rules:" && category = "rules")
+    then true
+    else false
+  in
+
+  (* Inserting into the syntax line list *)
+  let rec insert_rule = function
+    | line :: file_t when match_category line -> line :: rule :: file_t
+    | line :: file_t -> line :: insert_rule file_t
+    | [] -> [] (* Impossible: syntax file is guarenteed to be valid *)
+  in
+
+  (* Evaluating to find the new syntax rules *)
+  let new_syntax = insert_rule syntax_lines in
+  let new_syntax_text = String.concat "\n" new_syntax in
+
+  (* Modifying everything that needs to be modified *)
+  syntax_text := new_syntax_text ^ "\n";
+  syntax :=
+    (* We need to rebuild syntax everytime to ensure that the new syntax is well
+       formed, which is known to be checked by build_syntax*)
+    Syntax.build_syntax !syntax_text;
+
+  if edit_file then
+    (* File is only edited if one was provided in the first place *)
+    Out_channel.with_open_text !syntax_file (fun oc ->
+        Out_channel.output_string oc new_syntax_text;
+        Out_channel.output_char oc '\n')
+  else ()
+
+(* This logic has been abstracted out in case we need a more powerful command
+   reader/parser later *)
+let read_command () = String.split_on_char ' ' (read_line ())
 
 let main_loop =
   let tree = ref Tree.empty in
@@ -198,7 +271,7 @@ let main_loop =
   in
   let exit = ref false in
   while not !exit do
-    let command = String.split_on_char ' ' (read_line ()) in
+    let command = read_command () in
     try
       match List.hd command with
       | "quit" ->
@@ -207,15 +280,11 @@ let main_loop =
             exit := true
           in
           ()
-      | "syntax" ->
-          if !syntax_file <> "" then
-            next_command_prompt !tree
-              (BatFile.with_file_in !syntax_file BatIO.read_all)
-          else next_command_prompt !tree "Syntax is empty"
+      | "syntax" -> next_command_prompt !tree !syntax_text
       | "add" ->
           let lexical_category = List.nth command 1 in
           let word = List.nth command 2 in
-          if Validator.validate_lexeme lexical_category word syntax !dictionary
+          if Validator.validate_lexeme lexical_category word !syntax !dictionary
           then (
             let lexeme = Dictionary.create_lexeme lexical_category word in
             let new_tree, _ = Tree.add !tree lexeme in
@@ -232,7 +301,7 @@ let main_loop =
             in
             if
               Validator.validate_constituent test_node constituent_category
-                syntax
+                !syntax
             then (
               let new_tree, _ =
                 Tree.connect1 !tree node1 constituent_category
@@ -253,7 +322,7 @@ let main_loop =
             in
             if
               Validator.validate_constituent test_node constituent_category
-                syntax
+                !syntax
             then (
               let new_tree, _ =
                 Tree.connect2 !tree node1 node2 constituent_category
@@ -266,7 +335,7 @@ let main_loop =
           let new_tree = Tree.remove !tree (int_of_string node) in
           tree := new_tree;
           next_command_prompt !tree "Removed node"
-      | "expand" ->
+      | "expand-dict" ->
           if !dictionary_exists then (
             let lexical_category = List.nth command 1 in
             let word = List.nth command 2 in
@@ -287,6 +356,26 @@ let main_loop =
             next_command_prompt !tree
               "This command is disabled when the dictionary file is not passed \
                as a program argument."
+      | "expand-syntax" -> (
+          let category = List.nth command 1 in
+          let rule = List.nth command 2 in
+
+          let to_mod_file, message =
+            if !syntax_file = "" then
+              ( false,
+                "No syntax file was provided. New syntax element was added to \
+                 working syntax" )
+            else
+              ( true,
+                "Added new syntax element to syntax and modified syntax file" )
+          in
+          try
+            modify_syntax category rule to_mod_file;
+            next_command_prompt !tree message
+          with _ ->
+            next_command_prompt !tree
+              "There was an error in the command given. Please ensure that the \
+               format given matches the syntax specification exactly")
       | "toggle_fancy" ->
           let () = fancy_strings_enabled := not !fancy_strings_enabled in
           next_command_prompt !tree "Toggled tree printing type"
