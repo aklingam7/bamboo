@@ -10,12 +10,12 @@
 (authors
  "Aditya Lingam <akl84>"
  "Alex Doboli <add82>"
- "Elli Belyarchik <dly23>"
+ "Dashiell Yamanishi <dly23>"
  "Prajwal Reddy <pmr93>")
 
 (package
  (name bamboo)
- (synopsis "A tree generator")
- (description "-")
+ (synopsis "A syntax tree builder")
+ (description "A tool to allow syntacticians to construct ASCII and nested brackets trees while staying within set dictionaries and syntaxes, while also allowing them to modify those restrictions if necessary.")
  (depends ocaml ppx_string)
  (tags ("syntax")))
