@@ -1,5 +1,6 @@
 exception InvalidSyntax
 exception MalformedSyntax
+exception NonexistentRuleType
 
 (** Abstraction function: The [lexical_categories] list [l1; ...; ln] represents
     the n distinct lexical categories recognized as valid by the syntax, using
@@ -171,10 +172,7 @@ let modify_syntax category rule syntax file_opt =
   let rec insert_rule = function
     | line :: file_t when match_category line -> line :: rule :: file_t
     | line :: file_t -> line :: insert_rule file_t
-    | _ -> ( [] [@coverage off])
-    (* The previous two cases block all cases which obey the precondition, so
-       this line being reached requires a precondition violation. Thus it is
-       ignored. *)
+    | _ -> raise NonexistentRuleType
   in
 
   (* Evaluating to find the new syntax rules *)

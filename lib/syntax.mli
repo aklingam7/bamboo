@@ -1,5 +1,6 @@
 exception InvalidSyntax
 exception MalformedSyntax
+exception NonexistentRuleType
 
 type syntax
 (** [syntax] represents a context-free grammar for X-bar theory, including
@@ -67,4 +68,7 @@ val modify_syntax : string -> string -> syntax -> string option -> syntax
 (** [modify_syntax rule_category rule syntax file_opt] returns a syntax
     containing all of the rules of the passed-in [syntax] as well as the passed
     [rule] in the given [rule_category], and modifies the [file_opt] to contain
-    the new syntax if it is not None. *)
+    the new syntax if it is not None.
+
+    Raises: [NonexistentRuleType] if [rule_category] is not
+    'lexical-categories', 'constituent-categories', or 'rules'. *)

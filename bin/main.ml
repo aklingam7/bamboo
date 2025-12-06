@@ -17,70 +17,82 @@ let print_commands () =
     ANSITerminal.print_string
       [ ANSITerminal.white; ANSITerminal.Bold; ANSITerminal.on_black ]
   in
-
+  let print_arrow () =
+    ANSITerminal.print_string
+      [ ANSITerminal.magenta; ANSITerminal.Bold; ANSITerminal.on_black ]
+      " -> "
+  in
   let () = print_header "Commands:\n" in
   let () =
-    print_header "\tquit -> ";
+    print_header "\tquit";
+    print_arrow ();
     print_text "Exits the program\n"
   in
   let () =
-    print_header "\tsyntax -> ";
+    print_header "\treview";
+    print_arrow ();
+    print_text "Provides the user with a description of how syntax trees work\n"
+  in
+  let () =
+    print_header "\tsyntax";
+    print_arrow ();
     print_text
       "Displays the full syntax, including lexical categories, constituent \
        categories, and constituent formation rules\n"
   in
   let () =
-    print_header "\tadd <lexical-category> <word> -> ";
+    print_header "\tadd <lexical-category> <word>";
+    print_arrow ();
     print_text
       "Adds a node containing the described lexeme to the syntax tree\n"
   in
   let () =
-    print_header "\tconnect <constituent-category> <node> -> ";
+    if !dictionary_exists then (
+      print_header "\texpand-dict <lexical-category> <word>";
+      print_arrow ();
+      print_text
+        "Expands the current dictionary (including the file) with an entry \
+         containing the described lexeme.\n")
+    else ()
+  in
+  let () =
+    print_header "\texpand-syntax <rule-category> <rule>";
+    print_arrow ();
+    print_text
+      "Expands the current syntax (including the file) with an entry \
+       containing the described rule. Categories include 'lexical-categories', \
+       'constituent-categories', and 'rules'. Use quotes around rules.\n"
+  in
+  let () =
+    print_header "\tconnect <constituent-category> <node>";
+    print_arrow ();
     print_text
       "Adds a constituent node parenting the given node to the syntax tree\n"
   in
   let () =
-    print_header "\tconnect <constituent-category> <node1> <node2> -> ";
+    print_header "\tconnect <constituent-category> <node1> <node2>";
+    print_arrow ();
     print_text
       "Adds a constituent node parenting the two given nodes in order to the \
        syntax tree\n"
   in
   let () =
-    print_header "\tremove <node> -> ";
+    print_header "\tremove <node>";
+    print_arrow ();
     print_text
       "Removes the given node and all its connections from the tree; can only \
        remove top-level nodes (i.e., nodes with no parents)\n"
   in
   let () =
-    if !dictionary_exists then (
-      print_header "\texpand-dict <lexical-category> <word> -> ";
-      print_text
-        "Expands the current dictionary (including the file) with a word \
-         containing the described lexeme.\n")
-    else ()
+    print_header "\treset-tree";
+    print_arrow ();
+    print_text "Resets the tree and ID numbers back to an empty tree\n"
   in
   let () =
-    print_header "\texpand-syntax <rule-category> <rule> -> ";
-    print_text
-      "Expands the current syntax with (including the file) the rule passed \
-       in. The rules categories for this REPL are 'lexical-categories', \
-       'constituent-categories', and 'rules'. Please ensure complete \
-       compliance with the syntax format, including spacing. If you need to \
-       add a rule, please put quotes around the rule to ensure it is read \
-       properly.\n"
-  in
-  let () =
-    print_header "\treview -> ";
-    print_text "Provides the user with a description of how syntax trees work\n"
-  in
-  let () =
-    print_header "\ttoggle_fancy -> ";
+    print_header "\ttoggle-fancy";
+    print_arrow ();
     print_text
       "Toggle the display of trees between nested brackets and tree structures\n"
-  in
-  let () =
-    print_header "\treset_tree -> ";
-    print_text "Resets the tree and ID numbers back to an empty tree\n"
   in
   ()
 
@@ -109,32 +121,26 @@ let print_review () =
         the sentence as a whole. The rule, TP -> DP VP, indicates that a TP \
         node branches into two nodes, a DP and VP. The visualization is shown \
         below:\n\n\
-       \   TP\n\
+       \  TP\n\
        \  / \\\n\
        \ DP VP\n\n\
         A DP represents a noun phrase with a determiner (i.e, \"the\", \"my\", \
         \"his\", \"one\", \"four\", etc.), while a VP represents a verb \
-        phrase. For the sentence:\n\n\
-       \ \t\"The boy walks.\" \n\n\
-        The simple structure is shown below:\n\n" ^ ex_tree
+        phrase. The structure of the sentence \"The boy walks\" is shown \
+        below:\n\n" ^ ex_tree
      ^ "\n\n\
         It is important to note that we can not connect two lexical nodes \
         together (i.e, N, V, D, P, etc.). For example, for a DP to be formed, \
-        we must first form an NP first. We can not connect a D with an N as \
-        those are both lexical nodes.\n\n\
-        Right now, to connect nodes, use the rightmost id number as that \
-        represents the id number of the topmost node of the subtree.\n\n\
+        we must first form an NP first. We cannot connect a D with an N as \
+        those are both lexical nodes. Right now, to connect nodes, use the \
+        rightmost id number as that represents the id number of the topmost \
+        node of the subtree.\n\n\
         Here are the lexical node representations:\n\
         N\t- Noun\n\
         V\t- Verb\n\
         D\t- Determiner\n\
         P\t- Preposition (not originally given)\n\
-        Adj\t- Adjective\n\n\
-        Here are some general nodes that are not originally given:\n\
-        PP\t-> P DP\n\
-        VP\t-> V PP\n\
-        AdjP\t-> Adj\n\
-        NP\t-> AdjP N\n\n")
+        Adj\t- Adjective\n")
   in
   ()
 
@@ -237,7 +243,21 @@ let syntax =
 
 (* This logic has been abstracted out in case we need a more powerful command
    reader/parser later *)
-let read_command () = String.split_on_char ' ' (read_line ())
+let read_command () =
+  let raw_command = read_line () in
+  if String.contains raw_command '\"' then
+    let processing_command = String.split_on_char '\"' raw_command in
+    if List.length processing_command <> 3 then
+      failwith
+        "Incorrect number of quotes in command; must contain either 2 or 0"
+    else
+      let result =
+        String.split_on_char ' ' (List.hd processing_command)
+        @ [ List.hd (List.tl processing_command) ]
+      in
+      let result = List.filteri (fun i a -> i <> 2) result in
+      result
+  else String.split_on_char ' ' raw_command
 
 let main_loop =
   let tree = ref Tree.empty in
@@ -250,15 +270,15 @@ let main_loop =
 
     if !starting_info <> "" then print_state (!starting_info ^ "\n\n") Warning;
 
-    print_commands ();
+    print_endline "Press enter to start.";
     print_string "\n> ";
     flush stdout
   in
 
   let exit = ref false in
   while not !exit do
-    let command = read_command () in
     try
+      let command = read_command () in
       match List.hd command with
       | "quit" ->
           let () =
@@ -382,21 +402,25 @@ let main_loop =
           try
             syntax := Syntax.modify_syntax category rule !syntax file_opt;
             next_command_prompt !tree message Ok
-          with _ ->
-            (next_command_prompt !tree
-               "Error: The format of the command given does not match the \
-                syntax specification exactly")
-              Error)
-      | "toggle_fancy" ->
+          with
+          | Syntax.NonexistentRuleType ->
+              next_command_prompt !tree
+                "Error: The rule category entered does not exist" Error
+          | _ ->
+              (next_command_prompt !tree
+                 "Error: The format of the command given does not match the \
+                  syntax specification exactly")
+                Error)
+      | "toggle-fancy" ->
           let () = fancy_strings_enabled := not !fancy_strings_enabled in
           next_command_prompt !tree "Toggled tree printing type" Ok
-      | "reset_tree" ->
+      | "reset-tree" ->
           let () = tree := Tree.empty in
           next_command_prompt !tree "Reset tree" Ok
       | "review" ->
           let () = review_opt := true in
           next_command_prompt !tree "Review displayed" Ok
-      | _ -> next_command_prompt !tree "Unknown command" Warning
+      | c -> next_command_prompt !tree ("Unknown command: " ^ c) Warning
     with
     | Tree.NonexistentNodeID id ->
         next_command_prompt !tree
@@ -407,7 +431,16 @@ let main_loop =
           ("Error: Node with ID " ^ string_of_int id
          ^ " does not exist or is not a top-level node")
           Error
-    | Failure msg -> next_command_prompt !tree ("Error: " ^ msg) Error
+    | Failure msg ->
+        if msg = "nth" then
+          next_command_prompt !tree
+            "Error: Insufficient number of arguments to command" Error
+        else if msg = "int_of_string" then
+          next_command_prompt !tree
+            "Error: Non-integer argument passed where integer argument was \
+             expected"
+            Error
+        else next_command_prompt !tree ("Error: " ^ msg) Error
     | Invalid_argument msg ->
         next_command_prompt !tree ("Invalid argument: " ^ msg) Warning
     | _ ->
