@@ -5,6 +5,8 @@
 - Aditya Lingam (akl84)
 - Dashiell Yamanishi (dly23)
 
+Mirror of the team repository at github.coecis.cornell.edu/dly23/PANDA-CS-3110-Team-Project (Cornell login required).
+
 ╔════════════════════════════════════════╗
 ║        Welcome to Bamboo!              ║
 ╚════════════════════════════════════════╝
